@@ -1,0 +1,1498 @@
+<!doctype html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="css/onsenui.css">
+<link rel="stylesheet" href="css/onsen-css-components.css">
+<link rel="stylesheet" href="css/uapp.css">
+<script src="js/angular/angular.js"></script>
+<script src="js/onsenui.js"></script>
+<script src="js/xml2json.min.js"></script>
+<script src="js/ngStorage.min.js"></script>
+<script src="js/jquery-1.9.1.min.js"></script>
+<script src="js/highstock.js"></script>
+<script src="js/angular-animate.min.js"></script>
+<script src="js/uapp.js"></script>
+<body>
+<ons-modal var="modal">
+  <ons-icon icon="ion-load-c" spin="true"></ons-icon>
+  <br>
+  <br>
+  Please wait.<br>
+  Getting Data... </ons-modal>
+<ons-navigator var="myNavigator" ng-controller="DropdownController">
+  <ons-page>
+    <ons-sliding-menu
+                  main-page="home.html"
+                  menu-page="menu.html"       
+                  side="left"
+                  max-slide-distance="275px"
+                  swipeable="false"
+                  var="menu"> </ons-sliding-menu>
+  </ons-page>
+</ons-navigator>
+<ons-template id="menu.html">
+  <ons-list>
+    <ons-list-item modifier="tapable" onclick="menu.toggleMenu()">Close<span class="list-item-action">
+      <ons-icon icon="ion-close-circled" size="22px"></ons-icon>
+      </span></ons-list-item>
+    <ons-list-item modifier="tapable" onclick="myNavigator.pushPage('modes.html', { animation : 'slide' } );menu.toggleMenu();">Modes<span class="list-item-action">
+      <ons-icon icon="ion-plus-round" size="22px"></ons-icon>
+      </span></ons-list-item>
+    <ons-list-item modifier="tapable" onclick="myNavigator.pushPage('clear.html', { animation : 'slide' } );menu.toggleMenu();">Clear Status<span class="list-item-action">
+      <ons-icon icon="ion-plus-round" size="22px"></ons-icon>
+      </span></ons-list-item>
+    <ons-list-item modifier="tapable" onclick="myNavigator.pushPage('calibrate.html', { animation : 'slide' } );menu.toggleMenu();">Calibrate<span class="list-item-action">
+      <ons-icon icon="ion-plus-round" size="22px"></ons-icon>
+      </span></ons-list-item>
+    <ons-list-item modifier="chevron" ng-click="getportallabels();" onclick="menu.toggleMenu()">Download Labels from Portal</ons-list-item>
+    <ons-list-item modifier="chevron" ng-click="syncdate();" onclick="menu.toggleMenu()">Sync RA Date w/ Phone</ons-list-item>
+    <ons-list-item modifier="chevron" ng-click="getcontrollerdata('v');" onclick="menu.toggleMenu()">Get RA Version</ons-list-item>
+    <ons-list-item modifier="chevron" ng-click="getcontrollerdata('boot');" onclick="menu.toggleMenu()">Reboot Controller</ons-list-item>
+  </ons-list>
+</ons-template>
+<ons-template id="home.html">
+  <ons-page>
+    <ons-tabbar var="tabbar">
+      <ons-tab page="parameters.html" label="Status" icon="ion-android-desktop" active="true"></ons-tab>
+      <ons-tab page="relay.html" label="Relay" icon="ion-ios-bolt"></ons-tab>
+      <ons-tab page="graph.html" label="Graph" icon="ion-ios-pulse-strong"></ons-tab>
+      <ons-tab page="settings.html" label="Settings" icon="ion-ios-cog"></ons-tab>
+    </ons-tabbar>
+    <ons-toolbar>
+      <div class="left">
+        <ons-toolbar-button ng-click="menu.toggleMenu()">
+          <ons-icon icon="ion-navicon" style="font-size: 32px; width: 1em;"></ons-icon>
+        </ons-toolbar-button>
+      </div>
+      <div class="center">
+        <ons-toolbar-button ng-click="popover.show($event);">{{activecontroller}}</ons-toolbar-button>
+      </div>
+      <div class="right">
+        <ons-toolbar-button ng-click="getcontrollerdata('r99');">Refresh
+          <ons-icon icon="ion-refresh" style="font-size: 32px; width: 1em;">
+        </ons-toolbar-button>
+      </div>
+    </ons-toolbar>
+  </ons-page>
+</ons-template>
+<ons-template id="parameters.html">
+  <ons-page>
+    <h4 style="color: #999; text-align: center;"> <img src="images/logo.png"><br>
+      <b>Status</b></h4>
+    <div id="paramcontainer"></div>
+    <div ng-controller="Parameters" ng-hide="showgraph">
+      <div class="lastupdatedlabel">Last updated: </div>
+      <div class="lastupdatedvalue">{{lastupdated}}</div>
+      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedvalue">{{forumid}}</div>
+      <center>
+        <div class="button-bar" style="width:100%;padding-top:10px;">
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadparameterstab();" checked>
+            <button class="button-bar__button">Parameters</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadflagstab();">
+            <button class="button-bar__button">Flags</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadiotab();">
+            <button class="button-bar__button">I/O</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loaddimmingtab();">
+            <button class="button-bar__button">Dimming</button>
+          </div>
+        </div>
+        <div class="button-bar" style="width:100%;">
+          <div class="button-bar__item" ng-show="cvarenabled">
+            <input type="radio" name="status_buttons" ng-click="loadcustomvartab();">
+            <button class="button-bar__button">Custom Variables</button>
+          </div>
+          <div class="button-bar__item" ng-show="rfenabled">
+            <input type="radio" name="status_buttons" ng-click="loadrftab();">
+            <button class="button-bar__button">RF</button>
+          </div>
+          <div class="button-bar__item" ng-show="dcpumpenabled">
+            <input type="radio" name="status_buttons" ng-click="loaddcpumptab();">
+            <button class="button-bar__button">DC Pump</button>
+          </div>
+        </div>
+      </center>
+      <div class="paramsbox">
+        <div class="paramslabel">{{t1n}}</div>
+        <div class="paramsvalue" ng-click="invokegraph('T1')">{{t1}}</div>
+      </div>
+      <div class="paramsbox">
+        <div class="paramslabel">{{t2n}}</div>
+        <div class="paramsvalue" ng-click="invokegraph('T2')">{{t2}}</div>
+      </div>
+      <div class="paramsbox">
+        <div class="paramslabel">{{t3n}}</div>
+        <div class="paramsvalue" ng-click="invokegraph('T3')">{{t3}}</div>
+      </div>
+      <div class="paramsbox">
+        <div class="paramslabel">{{phn}}</div>
+        <div class="paramsvalue" ng-click="invokegraph('PH')">{{ph}}</div>
+      </div>
+      <div class="paramsbox" ng-show="salinityenabled">
+        <div class="paramslabel">{{saln}}</div>
+        <div class="paramsvalue" ng-click="invokegraph('SAL')">{{sal}}</div>
+      </div>
+      <div class="paramsbox" ng-show="orpenabled">
+        <div class="paramslabel">{{orpn}}</div>
+        <div class="paramsvalue" ng-click="invokegraph('ORP')">{{orp}}</div>
+      </div>
+      <div class="paramsbox" ng-show="pheenabled">
+        <div class="paramslabel">{{phen}}</div>
+        <div class="paramsvalue" ng-click="invokegraph('PHE')">{{phe}}</div>
+      </div>
+      <div class="paramsbox" ng-show="wlenabled">
+        <div class="paramslabel">{{wln}}</div>
+        <div class="paramsvalue" ng-click="invokegraph('WL')">{{wl}}</div>
+      </div>
+      <div class="paramsbox" ng-show="multiwlenabled">
+        <div class="paramslabel">{{wl1n}}</div>
+        <div class="paramsvalue" ng-click="invokegraph('WL1')">{{wl1}}</div>
+      </div>
+      <div class="paramsbox" ng-show="multiwlenabled">
+        <div class="paramslabel">{{wl2n}}</div>
+        <div class="paramsvalue" ng-click="invokegraph('WL2')">{{wl2}}</div>
+      </div>
+      <div class="paramsbox" ng-show="multiwlenabled">
+        <div class="paramslabel">{{wl3n}}</div>
+        <div class="paramsvalue" ng-click="invokegraph('WL3')">{{wl3}}</div>
+      </div>
+      <div class="paramsbox" ng-show="multiwlenabled">
+        <div class="paramslabel">{{wl4n}}</div>
+        <div class="paramsvalue" ng-click="invokegraph('WL4')">{{wl4}}</div>
+      </div>
+      <div class="paramsbox" ng-show="humenabled">
+        <div class="paramslabel">{{humn}}</div>
+        <div class="paramsvalue" ng-click="invokegraph('HUM')">{{hum}}</div>
+      </div>
+      <div class="paramsbox" ng-show="parenabled">
+        <div class="paramslabel">{{parn}}</div>
+        <div class="paramsvalue" ng-click="invokegraph('PAR')">{{par}}</div>
+      </div>
+    </div>
+  </ons-page>
+</ons-template>
+<ons-template id="flags.html">
+  <ons-page>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
+      <b>Status</b> </h4>
+    <div ng-controller="Parameters">
+      <div class="lastupdatedlabel">Last updated: </div>
+      <div class="lastupdatedvalue">{{lastupdated}}</div>
+      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedvalue">{{forumid}}</div>
+      <center>
+        <div class="button-bar" style="width:100%;padding-top:10px;"">
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadparameterstab();">
+            <button class="button-bar__button">Parameters</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadflagstab();" checked>
+            <button class="button-bar__button">Flags</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadiotab();">
+            <button class="button-bar__button">I/O</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loaddimmingtab();">
+            <button class="button-bar__button">Dimming</button>
+          </div>
+        </div>
+        <div class="button-bar" style="width:100%;">
+          <div class="button-bar__item" ng-show="cvarenabled">
+            <input type="radio" name="status_buttons" ng-click="loadcustomvartab();">
+            <button class="button-bar__button">Custom Variables</button>
+          </div>
+          <div class="button-bar__item" ng-show="rfenabled">
+            <input type="radio" name="status_buttons" ng-click="loadrftab();">
+            <button class="button-bar__button">RF</button>
+          </div>
+          <div class="button-bar__item" ng-show="dcpumpenabled">
+            <input type="radio" name="status_buttons" ng-click="loaddcpumptab();">
+            <button class="button-bar__button">DC Pump</button>
+          </div>
+        </div>
+      </center>
+      </br>
+      <div class="flagslabel">{{lbl_NoFlags}}</div>
+      <div class="flagslabel">{{lbl_ATOTimeout}}</div>
+      <div class="iovalue"><img src="images/{{ATOTimeout}}.png"></div>
+      <div class="flagslabel">{{lbl_Overheat}}</div>
+      <div class="iovalue"><img src="images/{{Overheat}}.png"></div>
+      <div class="flagslabel">{{lbl_BusLock}}</div>
+      <div class="iovalue"><img src="images/{{BusLock}}.png"></div>
+      <div class="flagslabel">{{leakn}}</div>
+      <div class="iovalue"><img src="images/{{Leak}}.png"></div>
+      <div class="flagslabel">{{lbl_LightsOn}}</div>
+      <div class="iovalue"><img src="images/{{LightsOn}}.png"></div>
+    </div>
+    </div>
+  </ons-page>
+</ons-template>
+<ons-template id="io.html">
+  <ons-page>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
+      <b>Status</b> </h4>
+    <div ng-controller="Parameters">
+      <div class="lastupdatedlabel">Last updated: </div>
+      <div class="lastupdatedvalue">{{lastupdated}}</div>
+      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedvalue">{{forumid}}</div>
+      <center>
+        <div class="button-bar" style="width:100%;padding-top:10px;"">
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadparameterstab();">
+            <button class="button-bar__button">Parameters</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadflagstab();">
+            <button class="button-bar__button">Flags</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadiotab();" checked>
+            <button class="button-bar__button">I/O</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loaddimmingtab();">
+            <button class="button-bar__button">Dimming</button>
+          </div>
+        </div>
+        <div class="button-bar" style="width:100%;">
+          <div class="button-bar__item" ng-show="cvarenabled">
+            <input type="radio" name="status_buttons" ng-click="loadcustomvartab();">
+            <button class="button-bar__button">Custom Variables</button>
+          </div>
+          <div class="button-bar__item" ng-show="rfenabled">
+            <input type="radio" name="status_buttons" ng-click="loadrftab();">
+            <button class="button-bar__button">RF</button>
+          </div>
+          <div class="button-bar__item" ng-show="dcpumpenabled">
+            <input type="radio" name="status_buttons" ng-click="loaddcpumptab();">
+            <button class="button-bar__button">DC Pump</button>
+          </div>
+        </div>
+      </center>
+      </br>
+      <div class="iolabel">{{atohighn}}</div>
+      <div class="iovalue"><img src="images/{{atohigh}}.png"></div>
+      <div class="iolabel">{{atolown}}</div>
+      <div class="iovalue"><img src="images/{{atolow}}.png"></div>
+      <div ng-show="stardimmingenabled">
+        <div class="iolabel">{{alarmn}}</div>
+        <div class="iovalue"><img src="images/{{alarm}}.png"></div>
+        <div class="iolabel">{{leakn}}</div>
+        <div class="iovalue"><img src="images/{{leak}}.png"></div>
+      </div>
+      <div class="iolabel">{{io0n}}</div>
+      <div class="iovalue"><img src="images/{{io0}}.png"></div>
+      <div class="iolabel">{{io1n}}</div>
+      <div class="iovalue"><img src="images/{{io1}}.png"></div>
+      <div class="iolabel">{{io2n}}</div>
+      <div class="iovalue"><img src="images/{{io2}}.png"></div>
+      <div class="iolabel">{{io3n}}</div>
+      <div class="iovalue"><img src="images/{{io3}}.png"></div>
+      <div class="iolabel">{{io4n}}</div>
+      <div class="iovalue"><img src="images/{{io4}}.png"></div>
+      <div class="iolabel">{{io5n}}</div>
+      <div class="iovalue"><img src="images/{{io5}}.png"></div>
+      </br>
+    </div>
+    </div>
+  </ons-page>
+</ons-template>
+<ons-template id="dimming.html">
+  <ons-page>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
+      <b>Status</b> </h4>
+    <div ng-controller="Parameters">
+      <div class="lastupdatedlabel">Last updated: </div>
+      <div class="lastupdatedvalue">{{lastupdated}}</div>
+      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedvalue">{{forumid}}</div>
+      <center>
+        <div class="button-bar" style="width:100%;padding-top:10px;"">
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadparameterstab();">
+            <button class="button-bar__button">Parameters</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadflagstab();">
+            <button class="button-bar__button">Flags</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadiotab();">
+            <button class="button-bar__button">I/O</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loaddimmingtab();" checked>
+            <button class="button-bar__button">Dimming</button>
+          </div>
+        </div>
+        <div class="button-bar" style="width:100%;">
+          <div class="button-bar__item" ng-show="cvarenabled">
+            <input type="radio" name="status_buttons" ng-click="loadcustomvartab();">
+            <button class="button-bar__button">Custom Variables</button>
+          </div>
+          <div class="button-bar__item" ng-show="rfenabled">
+            <input type="radio" name="status_buttons" ng-click="loadrftab();">
+            <button class="button-bar__button">RF</button>
+          </div>
+          <div class="button-bar__item" ng-show="dcpumpenabled">
+            <input type="radio" name="status_buttons" ng-click="loaddcpumptab();">
+            <button class="button-bar__button">DC Pump</button>
+          </div>
+        </div>
+      </center>
+      </br>
+      <div class="dimminglabel" ng-class="pwmdclass">{{pwmd1n}}</div>
+      <div class="dimmingvalue" ng-class="pwmdclass">{{pwmd}}%</div>
+      <div class="dimmingslider" ng-click="dimmingoverride(0);">
+        <input type="range" class="range daylightslider" min="0" max="100" value="{{pwmd}}" disabled>
+      </div>
+      <div class="dimminglabel" ng-class="pwmaclass">{{pwma1n}}</div>
+      <div class="dimmingvalue" ng-class="pwmaclass">{{pwma}}%</div>
+      <div class="dimmingslider" ng-click="dimmingoverride(1);">
+        <input type="range" class="range actinicslider" min="0" max="100" value="{{pwma}}" disabled>
+      </div>
+      <div ng-show="stardimmingenabled">
+        <div class="dimminglabel" ng-class="pwmd2class">{{pwmd2n}}</div>
+        <div class="dimmingvalue" ng-class="pwmd2class">{{pwmd2}}%</div>
+        <div class="dimmingslider" ng-click="dimmingoverride(2);">
+          <input type="range" class="range daylightslider" min="0" max="100" value="{{pwmd2}}" disabled>
+        </div>
+        <div class="dimminglabel" ng-class="pwma2class">{{pwma2n}}</div>
+        <div class="dimmingvalue" ng-class="pwma2class">{{pwma2}}%</div>
+        <div class="dimmingslider" ng-click="dimmingoverride(3);">
+          <input type="range" class="range actinicslider" min="0" max="100" value="{{pwma2}}" disabled>
+        </div>
+      </div>
+      <div id="dimmingexpansion" ng-show="dimmingexpansionenabled">
+        <div class="dimminglabel" ng-class="pwme0class">{{pwme0n}}</div>
+        <div class="dimmingvalue" ng-class="pwme0class">{{pwme0}}%</div>
+        <div class="dimmingslider" ng-click="dimmingoverride(4);">
+          <input type="range" class="range pwmeslider" min="0" max="100" value="{{pwme0}}" disabled>
+        </div>
+        <div class="dimminglabel" ng-class="pwme1class">{{pwme1n}}</div>
+        <div class="dimmingvalue" ng-class="pwme1class">{{pwme1}}%</div>
+        <div class="dimmingslider" ng-click="dimmingoverride(5);">
+          <input type="range" class="range pwmeslider" min="0" max="100" value="{{pwme1}}" disabled>
+        </div>
+        <div class="dimminglabel" ng-class="pwme2class">{{pwme2n}}</div>
+        <div class="dimmingvalue" ng-class="pwme2class">{{pwme2}}%</div>
+        <div class="dimmingslider" ng-click="dimmingoverride(6);">
+          <input type="range" class="range pwmeslider" min="0" max="100" value="{{pwme2}}" disabled>
+        </div>
+        <div class="dimminglabel" ng-class="pwme3class">{{pwme3n}}</div>
+        <div class="dimmingvalue" ng-class="pwme3class">{{pwme3}}%</div>
+        <div class="dimmingslider" ng-click="dimmingoverride(7);">
+          <input type="range" class="range pwmeslider" min="0" max="100" value="{{pwme3}}" disabled>
+        </div>
+        <div class="dimminglabel" ng-class="pwme4class">{{pwme4n}}</div>
+        <div class="dimmingvalue" ng-class="pwme4class">{{pwme4}}%</div>
+        <div class="dimmingslider" ng-click="dimmingoverride(8);">
+          <input type="range" class="range pwmeslider" min="0" max="100" value="{{pwme4}}" disabled>
+        </div>
+        <div class="dimminglabel" ng-class="pwme5class">{{pwme5n}}</div>
+        <div class="dimmingvalue" ng-class="pwme5class">{{pwme5}}%</div>
+        <div class="dimmingslider" ng-click="dimmingoverride(9);">
+          <input type="range" class="range pwmeslider" min="0" max="100" value="{{pwme5}}" disabled>
+        </div>
+      </div>
+      </br>
+    </div>
+    </div>
+  </ons-page>
+</ons-template>
+<ons-template id="customvar.html">
+  <ons-page>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
+      <b>Status</b> </h4>
+    <div ng-controller="Parameters">
+      <div class="lastupdatedlabel">Last updated: </div>
+      <div class="lastupdatedvalue">{{lastupdated}}</div>
+      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedvalue">{{forumid}}</div>
+      <center>
+        <div class="button-bar" style="width:100%;padding-top:10px;"">
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadparameterstab();">
+            <button class="button-bar__button">Parameters</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadflagstab();">
+            <button class="button-bar__button">Flags</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadiotab();">
+            <button class="button-bar__button">I/O</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loaddimmingtab();">
+            <button class="button-bar__button">Dimming</button>
+          </div>
+        </div>
+        <div class="button-bar" style="width:100%;">
+          <div class="button-bar__item" ng-show="cvarenabled">
+            <input type="radio" name="status_buttons" ng-click="loadcustomvartab();" checked>
+            <button class="button-bar__button">Custom Variables</button>
+          </div>
+          <div class="button-bar__item" ng-show="rfenabled">
+            <input type="radio" name="status_buttons" ng-click="loadrftab();">
+            <button class="button-bar__button">RF</button>
+          </div>
+          <div class="button-bar__item" ng-show="dcpumpenabled">
+            <input type="radio" name="status_buttons" ng-click="loaddcpumptab();">
+            <button class="button-bar__button">DC Pump</button>
+          </div>
+        </div>
+      </center>
+      </br>
+      <div class="cvarlabel" ng-click="cvarupdate(0);">{{c0n}}</div>
+      <div class="cvarvalue" ng-click="cvarupdate(0);">{{c0}}</div>
+      <div class="cvarlabel" ng-click="cvarupdate(1);">{{c1n}}</div>
+      <div class="cvarvalue" ng-click="cvarupdate(1);">{{c1}}</div>
+      <div class="cvarlabel" ng-click="cvarupdate(2);">{{c2n}}</div>
+      <div class="cvarvalue" ng-click="cvarupdate(2);">{{c2}}</div>
+      <div class="cvarlabel" ng-click="cvarupdate(3);">{{c3n}}</div>
+      <div class="cvarvalue" ng-click="cvarupdate(3);">{{c3}}</div>
+      <div class="cvarlabel" ng-click="cvarupdate(4);">{{c4n}}</div>
+      <div class="cvarvalue" ng-click="cvarupdate(4);">{{c4}}</div>
+      <div class="cvarlabel" ng-click="cvarupdate(5);">{{c5n}}</div>
+      <div class="cvarvalue" ng-click="cvarupdate(5);">{{c5}}</div>
+      <div class="cvarlabel" ng-click="cvarupdate(6);">{{c6n}}</div>
+      <div class="cvarvalue" ng-click="cvarupdate(6);">{{c6}}</div>
+      <div class="cvarlabel" ng-click="cvarupdate(7);">{{c7n}}</div>
+      <div class="cvarvalue" ng-click="cvarupdate(7);">{{c7}}</div>
+    </div>
+    </div>
+  </ons-page>
+</ons-template>
+<ons-template id="rf.html">
+  <ons-page>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
+      <b>Status</b> </h4>
+    <div ng-controller="Parameters">
+      <div class="lastupdatedlabel">Last updated: </div>
+      <div class="lastupdatedvalue">{{lastupdated}}</div>
+      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedvalue">{{forumid}}</div>
+      <center>
+        <div class="button-bar" style="width:100%;padding-top:10px;"">
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadparameterstab();">
+            <button class="button-bar__button">Parameters</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadflagstab();">
+            <button class="button-bar__button">Flags</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadiotab();">
+            <button class="button-bar__button">I/O</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loaddimmingtab();">
+            <button class="button-bar__button">Dimming</button>
+          </div>
+        </div>
+        <div class="button-bar" style="width:100%;">
+          <div class="button-bar__item" ng-show="cvarenabled">
+            <input type="radio" name="status_buttons" ng-click="loadcustomvartab();">
+            <button class="button-bar__button">Custom Variables</button>
+          </div>
+          <div class="button-bar__item" ng-show="rfenabled">
+            <input type="radio" name="status_buttons" ng-click="loadrftab();" checked>
+            <button class="button-bar__button">RF</button>
+          </div>
+          <div class="button-bar__item" ng-show="dcpumpenabled">
+            <input type="radio" name="status_buttons" ng-click="loaddcpumptab();">
+            <button class="button-bar__button">DC Pump</button>
+          </div>
+        </div>
+      </center>
+      </br>
+      <div class="rflabel" ng-click="rfmodeupdate();">Mode</div>
+      <div class="rflabel" ng-style="{color: rfmodecolor}" ng-click="rfmodeupdate();">{{rfm}}</div>
+      <div class="rflabel"><img src="images/{{rfimage}}" ng-click="rfmodeupdate();"></div>
+      <div class="cvarlabel" ng-click="rfspeedupdate();">Speed:</div>
+      <div class="cvarvalue" ng-click="rfspeedupdate();">{{rfs}}</div>
+      <div class="cvarlabel" ng-click="rfdurationupdate();">Duration:</div>
+      <div class="cvarvalue" ng-click="rfdurationupdate();">{{rfd}}</div>
+      </br>
+      <div class="dimminglabel" ng-class="rfwclass">{{rfwn}}</div>
+      <div class="dimmingvalue" ng-class="rfwclass">{{rfw}}%</div>
+      <div class="dimmingslider" ng-click="dimmingoverride(13);">
+        <input type="range" class="range daylightslider" min="0" max="100" value="{{rfw}}" disabled>
+      </div>
+      <div class="dimminglabel" ng-class="rfrbclass">{{rfrbn}}</div>
+      <div class="dimmingvalue" ng-class="rfrbclass">{{rfrb}}%</div>
+      <div class="dimmingslider" ng-click="dimmingoverride(14);">
+        <input type="range" class="range actinicslider" min="0" max="100" value="{{rfrb}}" disabled>
+      </div>
+      <div class="dimminglabel" ng-class="rfrclass">{{rfrn}}</div>
+      <div class="dimmingvalue" ng-class="rfrclass">{{rfr}}%</div>
+      <div class="dimmingslider" ng-click="dimmingoverride(15);">
+        <input type="range" class="range redslider" min="0" max="100" value="{{rfr}}" disabled>
+      </div>
+      <div class="dimminglabel" ng-class="rfgclass">{{rfgn}}</div>
+      <div class="dimmingvalue" ng-class="rfgclass">{{rfg}}%</div>
+      <div class="dimmingslider" ng-click="dimmingoverride(16);">
+        <input type="range" class="range pwmeslider" min="0" max="100" value="{{rfg}}" disabled>
+      </div>
+      <div class="dimminglabel" ng-class="rfbclass">{{rfbn}}</div>
+      <div class="dimmingvalue" ng-class="rfbclass">{{rfb}}%</div>
+      <div class="dimmingslider" ng-click="dimmingoverride(17);">
+        <input type="range" class="range blueslider" min="0" max="100" value="{{rfb}}" disabled>
+      </div>
+      <div class="dimminglabel" ng-class="rficlass">{{rfin}}</div>
+      <div class="dimmingvalue" ng-class="rficlass">{{rfi}}%</div>
+      <div class="dimmingslider" ng-click="dimmingoverride(18);">
+        <input type="range" class="range intensityslider" min="0" max="100" value="{{rfi}}" disabled>
+      </div>
+      </br>
+    </div>
+    </div>
+  </ons-page>
+</ons-template>
+<ons-template id="dcpump.html">
+  <ons-page>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
+      <b>Status</b> </h4>
+    <div ng-controller="Parameters">
+      <div class="lastupdatedlabel">Last updated: </div>
+      <div class="lastupdatedvalue">{{lastupdated}}</div>
+      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedvalue">{{forumid}}</div>
+      <center>
+        <div class="button-bar" style="width:100%;padding-top:10px;"">
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadparameterstab();">
+            <button class="button-bar__button">Parameters</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadflagstab();">
+            <button class="button-bar__button">Flags</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadiotab();">
+            <button class="button-bar__button">I/O</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loaddimmingtab();">
+            <button class="button-bar__button">Dimming</button>
+          </div>
+        </div>
+        <div class="button-bar" style="width:100%;">
+          <div class="button-bar__item" ng-show="cvarenabled">
+            <input type="radio" name="status_buttons" ng-click="loadcustomvartab();">
+            <button class="button-bar__button">Custom Variables</button>
+          </div>
+          <div class="button-bar__item" ng-show="rfenabled">
+            <input type="radio" name="status_buttons" ng-click="loadrftab();">
+            <button class="button-bar__button">RF</button>
+          </div>
+          <div class="button-bar__item" ng-show="dcpumpenabled">
+            <input type="radio" name="status_buttons" ng-click="loaddcpumptab();" checked>
+            <button class="button-bar__button">DC Pump</button>
+          </div>
+        </div>
+      </center>
+      </br>
+      <div class="rflabel" ng-click="dcmodeupdate();">Mode</div>
+      <div class="rflabel" ng-style="{color: dcmodecolor}" ng-click="dcmodeupdate();">{{dcm}}</div>
+      <div class="rflabel"><img src="images/{{dcimage}}" ng-click="dcmodeupdate();"></div>
+      <div class="cvarlabel" ng-click="dcspeedupdate();">Speed:</div>
+      <div class="cvarvalue" ng-click="dcspeedupdate();">{{dcs}}</div>
+      <div class="cvarlabel" ng-click="dcdurationupdate();">Duration:</div>
+      <div class="cvarvalue" ng-click="dcdurationupdate();">{{dcd}}</div>
+    </div>
+    </div>
+  </ons-page>
+</ons-template>
+<ons-template id="dimmingoverride.html">
+  <ons-page>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
+      <b>Status</b> </h4>
+    <div ng-controller="Parameters">
+      <div class="lastupdatedlabel">Last updated: </div>
+      <div class="lastupdatedvalue">{{lastupdated}}</div>
+      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedvalue">{{forumid}}</div>
+      <center>
+        <div class="button-bar" style="width:100%;padding-top:10px;"">
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadparameterstab();">
+            <button class="button-bar__button">Parameters</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadflagstab();">
+            <button class="button-bar__button">Flags</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadiotab();">
+            <button class="button-bar__button">I/O</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loaddimmingtab();" ng-checked="dimmingtab">
+            <button class="button-bar__button">Dimming</button>
+          </div>
+        </div>
+        <div class="button-bar" style="width:100%;">
+          <div class="button-bar__item" ng-show="cvarenabled">
+            <input type="radio" name="status_buttons" ng-click="loadcustomvartab();">
+            <button class="button-bar__button">Custom Variables</button>
+          </div>
+          <div class="button-bar__item" ng-show="rfenabled">
+            <input type="radio" name="status_buttons" ng-click="loadrftab();" ng-checked="rftab">
+            <button class="button-bar__button">RF</button>
+          </div>
+          <div class="button-bar__item" ng-show="dcpumpenabled">
+            <input type="radio" name="status_buttons" ng-click="loaddcpumptab();">
+            <button class="button-bar__button">DC Pump</button>
+          </div>
+        </div>
+      </center>
+      </br>
+      <p class=rflabel>Dimming Override</p>
+      <div class="rflabel">{{dimmingoverridelabel}}</div>
+      </br>
+      <div class="dimminglabel">
+        <input type="text" class="text-input"  ng-model="dimmingoverridechange" size="3" maxlength="3">
+      </div>
+      <div class="dimmingslider">
+        <input type="range" ng-class="{{dimmingoverrideslider}}" min="0" max="100" ng-change="overridechange()" ng-model="dimmingoverridechange">
+      </div>
+      </br>
+      <div class="rflabel">
+        <button class="button" ng-click="setoverride();">Set Override</button>
+        <button class="button" ng-click="canceloverride();">Cancel Override</button>
+        <button class="button" ng-click="backoverride();"><- Back</button>
+      </div>
+    </div>
+    </div>
+  </ons-page>
+</ons-template>
+<ons-template id="cvarupdate.html">
+  <ons-page>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
+      <b>Status</b> </h4>
+    <div ng-controller="Parameters">
+      <div class="lastupdatedlabel">Last updated: </div>
+      <div class="lastupdatedvalue">{{lastupdated}}</div>
+      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedvalue">{{forumid}}</div>
+      <center>
+        <div class="button-bar" style="width:100%;padding-top:10px;"">
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadparameterstab();">
+            <button class="button-bar__button">Parameters</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadflagstab();">
+            <button class="button-bar__button">Flags</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadiotab();">
+            <button class="button-bar__button">I/O</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loaddimmingtab();">
+            <button class="button-bar__button">Dimming</button>
+          </div>
+        </div>
+        <div class="button-bar" style="width:100%;">
+          <div class="button-bar__item" ng-show="cvarenabled">
+            <input type="radio" name="status_buttons" ng-click="loadcustomvartab();" checked>
+            <button class="button-bar__button">Custom Variables</button>
+          </div>
+          <div class="button-bar__item" ng-show="rfenabled">
+            <input type="radio" name="status_buttons" ng-click="loadrftab();">
+            <button class="button-bar__button">RF</button>
+          </div>
+          <div class="button-bar__item" ng-show="dcpumpenabled">
+            <input type="radio" name="status_buttons" ng-click="loaddcpumptab();">
+            <button class="button-bar__button">DC Pump</button>
+          </div>
+        </div>
+      </center>
+      </br>
+      <p class=rflabel>Custom Variable update</p>
+      <div class="cvarlabel">{{cvarupdatelabel}}</div>
+      <div class="dimmingoverridevalue">
+        <input type="text" class="text-input"  ng-model="cvarupdatechange" size="3" maxlength="3">
+      </div>
+      </br>
+      </br>
+      <div class="rflabel">
+        <button class="button" ng-click="setcvarupdate();">Update</button>
+        <button class="button" ng-click="backcvarupdate();"><- Back</button>
+      </div>
+    </div>
+    </div>
+  </ons-page>
+</ons-template>
+<ons-template id="rfmodeupdate.html">
+  <ons-page>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
+      <b>Status</b> </h4>
+    <div ng-controller="Parameters">
+      <div class="lastupdatedlabel">Last updated: </div>
+      <div class="lastupdatedvalue">{{lastupdated}}</div>
+      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedvalue">{{forumid}}</div>
+      <center>
+        <div class="button-bar" style="width:100%;padding-top:10px;"">
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadparameterstab();">
+            <button class="button-bar__button">Parameters</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadflagstab();">
+            <button class="button-bar__button">Flags</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadiotab();">
+            <button class="button-bar__button">I/O</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loaddimmingtab();">
+            <button class="button-bar__button">Dimming</button>
+          </div>
+        </div>
+        <div class="button-bar" style="width:100%;">
+          <div class="button-bar__item" ng-show="cvarenabled">
+            <input type="radio" name="status_buttons" ng-click="loadcustomvartab();">
+            <button class="button-bar__button">Custom Variables</button>
+          </div>
+          <div class="button-bar__item" ng-show="rfenabled">
+            <input type="radio" name="status_buttons" ng-click="loadrftab();" checked>
+            <button class="button-bar__button">RF</button>
+          </div>
+          <div class="button-bar__item" ng-show="dcpumpenabled">
+            <input type="radio" name="status_buttons" ng-click="loaddcpumptab();">
+            <button class="button-bar__button">DC Pump</button>
+          </div>
+        </div>
+      </center>
+      </br>
+      <p class=rflabel>Please select mode:</p>
+      <label ng-repeat="mode in rfmodes" class="rflabel radio-button radio-button--list-item" style="color:{{mode.color}}; text-shadow: 1px 1px 2px grey;">
+      <input type="radio" name="rfmodeselect" ng-model="rfmodeupdatechange" ng-value="mode.name" ng-change="setrfmodeupdate(mode.id)">
+      <div class="radio-button__checkmark radio-button--list-item__checkmark"></div>
+      {{mode.name}}
+      </label>
+      <div class="rflabel">
+        <button class="button" ng-click="backrfupdate();"><- Back</button>
+      </div>
+      </br>
+    </div>
+    </div>
+  </ons-page>
+</ons-template>
+<ons-template id="dcmodeupdate.html">
+  <ons-page>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
+      <b>Status</b> </h4>
+    <div ng-controller="Parameters">
+      <div class="lastupdatedlabel">Last updated: </div>
+      <div class="lastupdatedvalue">{{lastupdated}}</div>
+      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedvalue">{{forumid}}</div>
+      <center>
+        <div class="button-bar" style="width:100%;padding-top:10px;"">
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadparameterstab();">
+            <button class="button-bar__button">Parameters</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadflagstab();">
+            <button class="button-bar__button">Flags</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadiotab();">
+            <button class="button-bar__button">I/O</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loaddimmingtab();">
+            <button class="button-bar__button">Dimming</button>
+          </div>
+        </div>
+        <div class="button-bar" style="width:100%;">
+          <div class="button-bar__item" ng-show="cvarenabled">
+            <input type="radio" name="status_buttons" ng-click="loadcustomvartab();">
+            <button class="button-bar__button">Custom Variables</button>
+          </div>
+          <div class="button-bar__item" ng-show="rfenabled">
+            <input type="radio" name="status_buttons" ng-click="loadrftab();">
+            <button class="button-bar__button">RF</button>
+          </div>
+          <div class="button-bar__item" ng-show="dcpumpenabled">
+            <input type="radio" name="status_buttons" ng-click="loaddcpumptab();" checked>
+            <button class="button-bar__button">DC Pump</button>
+          </div>
+        </div>
+      </center>
+      </br>
+      <p class=rflabel>Please select mode:</p>
+      <label ng-repeat="mode in dcmodes" class="rflabel radio-button radio-button--list-item" style="color:{{mode.color}}; text-shadow: 1px 1px 2px grey;">
+      <input type="radio" name="dcmodeselect" ng-model="dcmodeupdatechange" ng-value="mode.name" ng-change="setdcmodeupdate(mode.id)">
+      <div class="radio-button__checkmark radio-button--list-item__checkmark"></div>
+      {{mode.name}}
+      </label>
+      <div class="rflabel">
+        <button class="button" ng-click="backdcupdate();"><- Back</button>
+      </div>
+      </br>
+    </div>
+    </div>
+  </ons-page>
+</ons-template>
+<ons-template id="speedupdate.html">
+  <ons-page>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
+      <b>Status</b> </h4>
+    <div ng-controller="Parameters">
+      <div class="lastupdatedlabel">Last updated: </div>
+      <div class="lastupdatedvalue">{{lastupdated}}</div>
+      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedvalue">{{forumid}}</div>
+      <center>
+        <div class="button-bar" style="width:100%;padding-top:10px;"">
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadparameterstab();">
+            <button class="button-bar__button">Parameters</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadflagstab();">
+            <button class="button-bar__button">Flags</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadiotab();">
+            <button class="button-bar__button">I/O</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loaddimmingtab();">
+            <button class="button-bar__button">Dimming</button>
+          </div>
+        </div>
+        <div class="button-bar" style="width:100%;">
+          <div class="button-bar__item" ng-show="cvarenabled">
+            <input type="radio" name="status_buttons" ng-click="loadcustomvartab();">
+            <button class="button-bar__button">Custom Variables</button>
+          </div>
+          <div class="button-bar__item" ng-show="rfenabled">
+            <input type="radio" name="status_buttons" ng-click="loadrftab();" ng-checked="rftab">
+            <button class="button-bar__button">RF</button>
+          </div>
+          <div class="button-bar__item" ng-show="dcpumpenabled">
+            <input type="radio" name="status_buttons" ng-click="loaddcpumptab();" ng-checked="dctab">
+            <button class="button-bar__button">DC Pump</button>
+          </div>
+        </div>
+      </center>
+      </br>
+      <p class=rflabel>Speed update</p>
+      <div class="cvarlabel">Speed</div>
+      <div class="dimmingoverridevalue">
+        <input type="text" class="text-input"  ng-model="speedupdatechange" size="3" maxlength="3">
+      </div>
+      </br>
+      </br>
+      <div class="rflabel">
+        <button class="button" ng-click="setspeedupdate();">Update</button>
+        <button class="button" ng-click="backoverride();"><- Back</button>
+      </div>
+    </div>
+    </div>
+  </ons-page>
+</ons-template>
+<ons-template id="durationupdate.html">
+  <ons-page>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
+      <b>Status</b> </h4>
+    <div ng-controller="Parameters">
+      <div class="lastupdatedlabel">Last updated: </div>
+      <div class="lastupdatedvalue">{{lastupdated}}</div>
+      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedvalue">{{forumid}}</div>
+      <center>
+        <div class="button-bar" style="width:100%;padding-top:10px;"">
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadparameterstab();">
+            <button class="button-bar__button">Parameters</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadflagstab();">
+            <button class="button-bar__button">Flags</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadiotab();">
+            <button class="button-bar__button">I/O</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loaddimmingtab();">
+            <button class="button-bar__button">Dimming</button>
+          </div>
+        </div>
+        <div class="button-bar" style="width:100%;">
+          <div class="button-bar__item" ng-show="cvarenabled">
+            <input type="radio" name="status_buttons" ng-click="loadcustomvartab();">
+            <button class="button-bar__button">Custom Variables</button>
+          </div>
+          <div class="button-bar__item" ng-show="rfenabled">
+            <input type="radio" name="status_buttons" ng-click="loadrftab();" ng-checked="rftab">
+            <button class="button-bar__button">RF</button>
+          </div>
+          <div class="button-bar__item" ng-show="dcpumpenabled">
+            <input type="radio" name="status_buttons" ng-click="loaddcpumptab();" ng-checked="dctab">
+            <button class="button-bar__button">DC Pump</button>
+          </div>
+        </div>
+      </center>
+      </br>
+      <p class=rflabel>Duration update</p>
+      <div class="cvarlabel">Duration</div>
+      <div class="dimmingoverridevalue">
+        <input type="text" class="text-input"  ng-model="durationupdatechange" size="3" maxlength="3">
+      </div>
+      </br>
+      </br>
+      <div class="rflabel">
+        <button class="button" ng-click="setdurationupdate();">Update</button>
+        <button class="button" ng-click="backoverride();"><- Back</button>
+      </div>
+    </div>
+    </div>
+  </ons-page>
+</ons-template>
+<ons-template id="relay.html">
+  <ons-page>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
+      <b>Relay</b> </h4>
+    <div ng-controller="Relay">
+      <div class="lastupdatedlabel">Last updated: </div>
+      <div class="lastupdatedvalue">{{lastupdated}}</div>
+      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedvalue">{{forumid}}</div>
+      <div ng-show="mainenabled" ng-repeat="n in [1,2,3,4,5,6,7,8]">
+        <div class="relaylabel"><span ng-bind="r{{n}}n"></span></div>
+        <div class="cvarvalue">
+          <div class="button-bar" style="width:200px;">
+            <div class="button-bar__item">
+              <input type="radio" name="relaybuttons{{n}}" ng-checked="r{{n}}on" ng-click="changerelay(n,1)">
+              <button class="button-bar__button" ng-class="r{{n}}onclass">On</button>
+            </div>
+            <div class="button-bar__item">
+              <input type="radio" name="relaybuttons{{n}}" ng-checked="r{{n}}off" ng-click="changerelay(n,0)">
+              <button class="button-bar__button" ng-class="r{{n}}offclass">Off</button>
+            </div>
+            <div class="button-bar__item">
+              <input type="radio" name="relaybuttons{{n}}" ng-checked="r{{n}}auto" ng-click="changerelay(n,2)">
+              <button class="button-bar__button" ng-class="r{{n}}autoclass">Auto</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div ng-show="expansionenabled" ng-repeat="n in [1,2,3,4,5,6,7,8]">
+        <div ng-show="exp{{n}}enabled" ng-repeat="m in [1,2,3,4,5,6,7,8]">
+          <div class="relaylabel"><span ng-bind="r{{n}}{{m}}n"></span></div>
+          <div class="cvarvalue">
+            <div class="button-bar" style="width:200px;">
+              <div class="button-bar__item">
+                <input type="radio" name="relaybuttons{{n}}{{m}}" ng-checked="r{{n}}{{m}}on" ng-click="changerelay((n*10)+m,1)">
+                <button class="button-bar__button" ng-class="r{{n}}{{m}}onclass">On</button>
+              </div>
+              <div class="button-bar__item">
+                <input type="radio" name="relaybuttons{{n}}{{m}}" ng-checked="r{{n}}{{m}}off" ng-click="changerelay((n*10)+m,0)">
+                <button class="button-bar__button" ng-class="r{{n}}{{m}}offclass">Off</button>
+              </div>
+              <div class="button-bar__item">
+                <input type="radio" name="relaybuttons{{n}}{{m}}" ng-checked="r{{n}}{{m}}auto" ng-click="changerelay((n*10)+m,2)">
+                <button class="button-bar__button" ng-class="r{{n}}{{m}}autoclass">Auto</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ons-page>
+</ons-template>
+<ons-template id="graph.html">
+  <ons-page>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
+      <b>Graph</b> </h4>
+    <div ng-controller="Graph">
+      <div id="container"></div>
+      <center ng-show="showgraphlist">
+        <div class="graphlist">
+          <ul class="list, nobottomline">
+            <li class="list__item list__item--tappable">
+              <label class="checkbox
+                      checkbox--noborder checkbox--list-item">
+              <input type="checkbox" ng-model="grapht1">
+              <div class="checkbox__checkmark 
+                        checkbox--noborder checkbox--list-item__checkmark"></div>
+              {{t1n}}
+              </label>
+            </li>
+            <li class="list__item list__item--tappable">
+              <label class="checkbox
+                      checkbox--noborder checkbox--list-item">
+              <input type="checkbox" ng-model="grapht2">
+              <div class="checkbox__checkmark
+                        checkbox--noborder checkbox--list-item__checkmark"></div>
+              {{t2n}}
+              </label>
+            </li>
+            <li class="list__item list__item--tappable">
+              <label class="checkbox
+                      checkbox--noborder checkbox--list-item">
+              <input type="checkbox" ng-model="grapht3">
+              <div class="checkbox__checkmark
+                        checkbox--noborder checkbox--list-item__checkmark"></div>
+              {{t3n}}
+              </label>
+            </li>
+            <li class="list__item list__item--tappable">
+              <label class="checkbox
+                      checkbox--noborder checkbox--list-item">
+              <input type="checkbox" ng-model="graphph">
+              <div class="checkbox__checkmark
+                        checkbox--noborder checkbox--list-item__checkmark"></div>
+              {{phn}}
+              </label>
+            </li>
+            <li class="list__item list__item--tappable" ng-show="salinityenabled">
+              <label class="checkbox
+                      checkbox--noborder checkbox--list-item">
+              <input type="checkbox" ng-model="graphsal">
+              <div class="checkbox__checkmark
+                        checkbox--noborder checkbox--list-item__checkmark"></div>
+              {{saln}}
+              </label>
+            </li>
+            <li class="list__item list__item--tappable" ng-show="orpenabled">
+              <label class="checkbox
+                      checkbox--noborder checkbox--list-item">
+              <input type="checkbox" ng-model="graphorp">
+              <div class="checkbox__checkmark
+                        checkbox--noborder checkbox--list-item__checkmark"></div>
+              {{orpn}}
+              </label>
+            </li>
+            <li class="list__item list__item--tappable" ng-show="pheenabled">
+              <label class="checkbox
+                      checkbox--noborder checkbox--list-item">
+              <input type="checkbox" ng-model="graphphe">
+              <div class="checkbox__checkmark
+                        checkbox--noborder checkbox--list-item__checkmark"></div>
+              {{phen}}
+              </label>
+            <li class="list__item list__item--tappable" ng-show="wlenabled">
+              <label class="checkbox
+                      checkbox--noborder checkbox--list-item">
+              <input type="checkbox" ng-model="graphwl">
+              <div class="checkbox__checkmark
+                        checkbox--noborder checkbox--list-item__checkmark"></div>
+              {{wln}}
+              </label>
+            <li class="list__item list__item--tappable" ng-show="multiwlenabled">
+              <label class="checkbox
+                      checkbox--noborder checkbox--list-item">
+              <input type="checkbox" ng-model="graphwl1">
+              <div class="checkbox__checkmark
+                        checkbox--noborder checkbox--list-item__checkmark"></div>
+              {{wl1n}}
+              </label>
+            </li>
+            <li class="list__item list__item--tappable" ng-show="multiwlenabled">
+              <label class="checkbox
+                      checkbox--noborder checkbox--list-item">
+              <input type="checkbox" ng-model="graphwl2">
+              <div class="checkbox__checkmark
+                        checkbox--noborder checkbox--list-item__checkmark"></div>
+              {{wl2n}}
+              </label>
+            </li>
+            <li class="list__item list__item--tappable" ng-show="multiwlenabled">
+              <label class="checkbox
+                      checkbox--noborder checkbox--list-item">
+              <input type="checkbox" ng-model="graphwl3">
+              <div class="checkbox__checkmark
+                        checkbox--noborder checkbox--list-item__checkmark"></div>
+              {{wl3n}}
+              </label>
+            </li>
+            <li class="list__item list__item--tappable" ng-show="multiwlenabled">
+              <label class="checkbox
+                      checkbox--noborder checkbox--list-item">
+              <input type="checkbox" ng-model="graphwl4">
+              <div class="checkbox__checkmark
+                        checkbox--noborder checkbox--list-item__checkmark"></div>
+              {{wl4n}}
+              </label>
+            </li>
+            <li class="list__item list__item--tappable" ng-show="parenabled">
+              <label class="checkbox
+                      checkbox--noborder checkbox--list-item">
+              <input type="checkbox" ng-model="graphpar">
+              <div class="checkbox__checkmark
+                        checkbox--noborder checkbox--list-item__checkmark"></div>
+              {{parn}}
+              </label>
+            </li>
+            <li class="list__item list__item--tappable" ng-show="humenabled">
+              <label class="checkbox
+                      checkbox--noborder checkbox--list-item">
+              <input type="checkbox" ng-model="graphhum">
+              <div class="checkbox__checkmark
+                        checkbox--noborder checkbox--list-item__checkmark"></div>
+              {{humn}}
+              </label>
+            </li>
+          </ul>
+          <br>
+        </div>
+        <button class="button" ng-click="buildgraph();">Draw Graph</button>
+        <br>
+        <br>
+      </center>
+    </div>
+  </ons-page>
+</ons-template>
+<ons-template id="settings.html">
+  <ons-page>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
+      <b>Settings</b> </h4>
+    <div ng-controller="Settings">
+      <center>
+        <div class="button-bar" style="width:100%;padding-top:10px;">
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadcontrollertab();" checked>
+            <button class="button-bar__button">Controller</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadinternalmemorytab();">
+            <button class="button-bar__button">Internal Memory</button>
+          </div>
+        </div>
+        <br>
+        <div>
+          <button class="button button--cta" style="width:40%;padding-top:10px;" ng-click="addcontroller();">Add Controller</button>
+        </div>
+        <br>
+        <div class="controllerlist">
+          <ons-list class="list list--inset">
+            <ons-list-header>Controllers</ons-list-header>
+            <ons-list-item ng-repeat="controller in controllers" class="controllerlistitem" id="controllerlistitemname"> {{controller.name}} <span class="list-item-action">
+              <ons-icon icon="ion-edit" size="22px" class="controllerlistaction" ng-click="editcontroller($index);"></ons-icon>
+              <ons-icon icon="ion-trash-a" size="22px" class="controllerlistaction" ng-click="deletecontroller($index);"></ons-icon>
+              </span> </ons-list-item>
+          </ons-list>
+        </div>
+      </center>
+    </div>
+  </ons-page>
+</ons-template>
+<ons-template id="internalmemory.html">
+  <ons-page>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
+      <b>Settings</b> </h4>
+    <div ng-controller="InternalMemory">
+      <center>
+        <div class="button-bar" style="width:100%;padding-top:10px;">
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadcontrollertab();">
+            <button class="button-bar__button">Controller</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadinternalmemorytab();" checked>
+            <button class="button-bar__button">Internal Memory</button>
+          </div>
+        </div>
+        <br>
+        <ons-list ng-show="showim">
+          <ons-list-item ng-click="toggleGroup(0)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(0)}">
+            <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(0)"></ons-icon>
+            <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(0)"></ons-icon>
+            Time Schedule </ons-list-item>
+          <ons-list-item class="item-accordion" ng-show="isGroupShown(0)">
+            <p>Please choose the settings for your Daylight and Actinic schedule. Delayed Start is useful for MH ballasts:</p>
+            <label for="daylighton"><strong>Turn Daylights on at:</strong></label>
+            <input type="time" ng-model="daylighton" class="timetext"/>
+            <br>
+            <label for="daylightoff"><strong>Turn Daylights off at:</strong></label>
+            <input type="time" ng-model="daylightoff" class="timetext"/>
+            <br>
+            <label for="daylightdelayed"><strong>Delayed Start (m):</strong></label>
+            <input type="number" ng-model="daylightdelayed" min="0" max="255" step="1" class="timetext"/>
+            <br>
+            <label for="actinicoffset"><strong>Actinic Offset (m):</strong></label>
+            <input type="number" ng-model="actinicoffset" min="0" max="255" step="1" class="timetext"/>
+          </ons-list-item>
+          <ons-list-item ng-click="toggleGroup(1)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(1)}">
+            <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(1)"></ons-icon>
+            <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(1)"></ons-icon>
+            Heater/Chiller </ons-list-item>
+          <ons-list-item class="item-accordion" ng-show="isGroupShown(1)">
+            <p>Please choose the temperature for your heater and chiller/fan:</p>
+            <label for="heateron"><strong>Turn Heater on at:</strong></label>
+            <input type="number" ng-model="heateron" min="0" max="999" step="0.1" class="timetext"/>
+            <br>
+            <label for="heateroff"><strong>Turn Heater off at:</strong></label>
+            <input type="number" ng-model="heateroff" min="0" max="999" step="0.1" class="timetext"/>
+            <br>
+            <label for="chilleron"><strong>Turn Chiller/Fan on at:</strong></label>
+            <input type="number" ng-model="chilleron" min="0" max="999" step="0.1" class="timetext"/>
+            <br>
+            <label for="chilleroff"><strong>Turn Chiller/Fan off at:</strong></label>
+            <input type="number" ng-model="chilleroff" min="0" max="999" step="0.1" class="timetext"/>
+            <br>
+            <label for="overheat"><strong>Overheat Temperature:</strong></label>
+            <input type="number" ng-model="overheat" min="0" max="999" step="0.1" class="timetext"/>
+          </ons-list-item>
+          <ons-list-item ng-click="toggleGroup(2)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(2)}">
+            <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(2)"></ons-icon>
+            <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(2)"></ons-icon>
+            Auto Top Off </ons-list-item>
+          <ons-list-item class="item-accordion" ng-show="isGroupShown(2)">
+            <p>Please choose the timeout for your Auto Top Off:</p>
+            <label for="atotimeout"><strong>ATO Timeout (s):</strong></label>
+            <input type="number" ng-model="atotimeout" min="0"max="32000" step="1" class="timetext"/>
+            <br>
+            <p>Please choose the Water Level expansion High and Low levels:</p>
+            <label for="waterlevellow"><strong>Low level (%):</strong></label>
+            <input type="number" ng-model="waterlevellow" min="0"max="100" step="1" class="timetext"/>
+            <br>
+            <label for="waterlevelhigh"><strong>High level (%):</strong></label>
+            <input type="number" ng-model="waterlevelhigh" min="0"max="100" step="1" class="timetext"/>
+          </ons-list-item>
+          <ons-list-item ng-click="toggleGroup(3)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(3)}">
+            <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(3)"></ons-icon>
+            <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(3)"></ons-icon>
+            Wavemaker </ons-list-item>
+          <ons-list-item class="item-accordion" ng-show="isGroupShown(3)">
+            <p>Please choose the cycle for your wavemaker:</p>
+            <label for="wmtimer"><strong>Cycle every (s):</strong></label>
+            <input type="number" ng-model="wmtimer" min="0"max="32000" step="1" class="timetext"/>
+          </ons-list-item>
+          <ons-list-item ng-click="toggleGroup(4)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(4)}">
+            <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(4)"></ons-icon>
+            <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(4)"></ons-icon>
+            CO2 Control </ons-list-item>
+          <ons-list-item class="item-accordion" ng-show="isGroupShown(4)">
+            <p>Please choose the pH for your CO2 controlled device:</p>
+            <label for="co2controlon"><strong>Turn on at:</strong></label>
+            <input type="number" ng-model="co2controlon" min="0"max="14" step=".01" class="timetext"/>
+            <br>
+            <label for="co2controloff"><strong>Turn off at:</strong></label>
+            <input type="number" ng-model="co2controloff" min="0"max="14" step=".01" class="timetext"/>
+          </ons-list-item>
+          <ons-list-item ng-click="toggleGroup(5)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(5)}">
+            <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(5)"></ons-icon>
+            <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(5)"></ons-icon>
+            pH Control </ons-list-item>
+          <ons-list-item class="item-accordion" ng-show="isGroupShown(5)">
+            <p>Please choose the pH for your pH controlled device:</p>
+            <label for="phcontrolon"><strong>Turn on at:</strong></label>
+            <input type="number" ng-model="phcontrolon" min="0"max="14" step=".01" class="timetext"/>
+            <br>
+            <label for="phcontroloff"><strong>Turn off at:</strong></label>
+            <input type="number" ng-model="phcontroloff" min="0"max="14" step=".01" class="timetext"/>
+          </ons-list-item>
+          <ons-list-item ng-click="toggleGroup(6)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(6)}">
+            <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(6)"></ons-icon>
+            <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(6)"></ons-icon>
+            Dosing Pump </ons-list-item>
+          <ons-list-item class="item-accordion" ng-show="isGroupShown(6)">
+            <p>Please choose the cycle and duration for your dosing pumps:</p>
+            <h4>Dosing Pump 1 (0 minutes offset)</h4>
+            <label for="dp1interval"><strong>Turn on every (m):</strong></label>
+            <input type="number" ng-model="dp1interval" min="0"max="32000" step="1" class="timetext"/>
+            <br>
+            <label for="dp1interval"><strong>Duration (s):</strong></label>
+            <input type="number" ng-model="dp1timer" min="0"max="255" step="1" class="timetext"/>
+            <br>
+            <h4>Dosing Pump 2 (5 minutes offset)</h4>
+            <label for="dp2interval"><strong>Turn on every (m):</strong></label>
+            <input type="number" ng-model="dp2interval" min="0"max="32000" step="1" class="timetext"/>
+            <br>
+            <label for="dp2interval"><strong>Duration (s):</strong></label>
+            <input type="number" ng-model="dp2timer" min="0"max="255" step="1" class="timetext"/>
+            <br>
+            <h4>Dosing Pump 3 (10 minutes offset)</h4>
+            <label for="dp3interval"><strong>Turn on every (m):</strong></label>
+            <input type="number" ng-model="dp3interval" min="0"max="32000" step="1" class="timetext"/>
+            <br>
+            <label for="dp3interval"><strong>Duration (s):</strong></label>
+            <input type="number" ng-model="dp3timer" min="0"max="255" step="1" class="timetext"/>
+          </ons-list-item>
+          <ons-list-item ng-click="toggleGroup(7)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(7)}">
+            <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(7)"></ons-icon>
+            <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(7)"></ons-icon>
+            Delayed Start </ons-list-item>
+          <ons-list-item class="item-accordion" ng-show="isGroupShown(7)">
+            <p>Please choose the delay you would like to wait to turn your devices after feeding/water change mode and power cycle:</p>
+            <label for="delayedon"><strong>Delayed Start (m):</strong></label>
+            <input type="number" ng-model="delayedon" min="0"max="255" step="1" class="timetext"/>
+          </ons-list-item>
+          <ons-list-item ng-click="toggleGroup(8)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(8)}">
+            <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(8)"></ons-icon>
+            <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(8)"></ons-icon>
+            Standard Dimming </ons-list-item>
+          <ons-list-item class="item-accordion" ng-show="isGroupShown(8)">
+            <p>Please choose the start %, end % and duration for each standard dimming channel. Duration is only applicable for Slope.</p>
+            <h4>Daylight Channel:</h4>
+            <label for="pwmslopestartd"><strong>Start %:</strong></label>
+            <input type="number" ng-model="pwmslopestartd" min="0"max="100" step="1" class="timetext"/>
+            <br>
+            <label for="pwmslopeendd"><strong>End %:</strong></label>
+            <input type="number" ng-model="pwmslopeendd" min="0"max="100" step="1" class="timetext"/>
+            <br>
+            <label for="pwmslopedurationd"><strong>Duration (m):</strong></label>
+            <input type="number" ng-model="pwmslopedurationd" min="0"max="255" step="1" class="timetext"/>
+            <br>
+            <h4>Actinic Channel:</h4>
+            <label for="pwmslopestarta"><strong>Start %:</strong></label>
+            <input type="number" ng-model="pwmslopestarta" min="0"max="100" step="1" class="timetext"/>
+            <br>
+            <label for="pwmslopeenda"><strong>End %:</strong></label>
+            <input type="number" ng-model="pwmslopeenda" min="0"max="100" step="1" class="timetext"/>
+            <br>
+            <label for="pwmslopedurationa"><strong>Duration (m):</strong></label>
+            <input type="number" ng-model="pwmslopedurationa" min="0"max="255" step="1" class="timetext"/>
+          </ons-list-item>
+          <ons-list-item ng-click="toggleGroup(9)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(9)}" ng-show="dimmingenabled">
+            <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(9)"></ons-icon>
+            <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(9)"></ons-icon>
+            Dimming Expansion </ons-list-item>
+          <ons-list-item class="item-accordion" ng-show="isGroupShown(9)">
+            <p>Please choose the start %, end % and duration for each expansion dimming channel. Duration is only applicable for Slope.</p>
+            <div ng-repeat="n in [0,1,2,3,4,5]">
+              <h4>Channel {{n}}:</h4>
+              <label><strong>Start %:</strong></label>
+              <input type="number" ng-model="pwmslopestart[n]" min="0"max="100" step="1" class="timetext"/>
+              <br>
+              <label><strong>End %:</strong></label>
+              <input type="number" ng-model="pwmslopeend[0]" min="0"max="100" step="1" class="timetext"/>
+              <br>
+              <label><strong>Duration (m):</strong></label>
+              <input type="number" ng-model="pwmslopeduration[0]" min="0"max="255" step="1" class="timetext"/>
+              <br>
+            </div>
+          </ons-list-item>
+        </ons-list>
+	    <div class="rflabel, whitespace">{{memoryresult}}</div>
+        <div class="rflabel" ng-show="showim">
+          <button class="button" ng-click="memsave();">Save</button>
+          <button class="button" ng-click="memback();">Cancel</button>
+        </div>
+        <br>
+      </center>
+    </div>
+  </ons-page>
+</ons-template>
+<ons-template id="addcontroller.html">
+  <ons-page>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
+      <b>Settings</b> </h4>
+    <div ng-controller="Settings">
+      <center>
+        <div class="button-bar" style="width:100%;padding-top:10px;">
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadcontrollertab();" checked>
+            <button class="button-bar__button">Controller</button>
+          </div>
+          <div class="button-bar__item">
+            <input type="radio" name="status_buttons" ng-click="loadinternalmemorytab();">
+            <button class="button-bar__button">Internal Memory</button>
+          </div>
+        </div>
+        <br>
+        <div class="controllerlist" style="text-align:left">
+          <p>Name:<br>
+            <input type="text" class="text-input"ng-model="controllername">
+          </p>
+          <p>IP Address:<br>
+            <input type="text" class="text-input"ng-model="controllerip">
+          </p>
+          <p>Port:<br>
+            <input type="text" class="text-input" ng-model="controllerport">
+          </p>
+        </div>
+        <div class="controllerlist">
+          <button class="button button--cta" style="width:40%;padding-top:10px;" ng-click="saveaddcontroller();">Save</button>
+          <br>
+          <br>
+          <button class="button button--cta" style="width:40%;padding-top:10px;" ng-click="loadcontrollertab();">Cancel</button>
+          <br>
+        </div>
+      </center>
+    </div>
+  </ons-page>
+</ons-template>
+<ons-template id="modes.html">
+  <ons-toolbar>
+    <div class="left" style="line-height: 44px">
+      <ons-back-button>Back</ons-back-button>
+    </div>
+    <div class="center"><b>Modes</b></div>
+  </ons-toolbar>
+  <button class="button button--large--cta" ng-click="getcontrollerdata('mf');">Feeding Mode</button>
+  <br>
+  <button class="button button--large--cta" ng-click="getcontrollerdata('mw');">Water Change Mode</button>
+  <br>
+  <button class="button button--large--cta" ng-click="getcontrollerdata('bp');">Exit Mode</button>
+  <br>
+  <button class="button button--large--cta" ng-click="getcontrollerdata('l1');">Lights On</button>
+  <br>
+  <button class="button button--large--cta" ng-click="getcontrollerdata('l0');">Lights Cancel</button>
+  <br>
+</ons-template>
+<ons-template id="clear.html">
+  <ons-toolbar>
+    <div class="left" style="line-height: 44px">
+      <ons-back-button>Back</ons-back-button>
+    </div>
+    <div class="center"><b>Clear Status</b></div>
+  </ons-toolbar>
+  <button class="button button--large--cta" ng-click="getcontrollerdata('mt');">Clear ATO</button>
+  <br>
+  <button class="button button--large--cta" ng-click="getcontrollerdata('mo');">Clear Overheat</button>
+  <br>
+  <button class="button button--large--cta" ng-click="getcontrollerdata('ml');">Clear Leak</button>
+  <br>
+</ons-template>
+<ons-template id="calibrate.html">
+  <ons-toolbar>
+    <div class="left" style="line-height: 44px">
+      <ons-back-button>Back</ons-back-button>
+    </div>
+    <div class="center"><b>Calibrate</b></div>
+  </ons-toolbar>
+  <button class="button button--large--cta" ng-click="getcontrollerdata('cal0');">pH</button>
+  <br>
+  <button class="button button--large--cta" ng-click="getcontrollerdata('cal1');">Salinity</button>
+  <br>
+  <button class="button button--large--cta" ng-click="getcontrollerdata('cal2');">ORP</button>
+  <br>
+  <button class="button button--large--cta" ng-click="getcontrollerdata('cal3');">pH Expansion</button>
+  <br>
+  <button class="button button--large--cta" ng-click="getcontrollerdata('cal4');">Water Level</button>
+  <br>
+</ons-template>
+<ons-template id="popover.html">
+  <ons-popover direction="down" cancelable ng-controller="PopoverController">
+    <ons-list>
+      <ons-list-item modifier="tappable" ng-repeat="controller in controllers" id="controllerlistitemname" class="controllerlistitem" ng-click="controllerselected($index)">{{controller.name}}</ons-list-item>
+    </ons-list>
+  </ons-popover>
+</ons-template>
+</body>

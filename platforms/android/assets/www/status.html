@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+     KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="format-detection" content="telephone=no" />
+        <!-- WARNING: for iOS 7, remove the width=device-width and height=device-height attributes. See https://issues.apache.org/jira/browse/CB-4323 -->
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+        <link rel="stylesheet" type="text/css" href="css/index.css" />
+        <meta name="msapplication-tap-highlight" content="no" />
+        <link rel="stylesheet" href="css/jquery.mobile-1.4.2.min.css" />
+        <script src="js/jquery-1.9.1.min.js"></script>
+        <script src="js/jquery.mobile-1.4.2.min.js"></script> 
+        <script src="js/jquery.knob.js"></script>
+        <script src="js/fastclick.js"></script>
+        <script src="js/date.js"></script>
+
+        <title>Reef Angel U-App</title>
+    </head>
+    <body>
+        <div id="panel-fixed-page1" class="jqm-demos" data-role="page" data-url="panel-fixed-page1" data-title="Reef Angel U-App">
+	        <div data-role="header" data-position="fixed" data-theme="b">
+                <div class="controllerselect">
+                <center>
+                    <select id="controller_selection" data-mini="true" data-theme="b">
+                    </select>
+                </center>
+                </div>
+                <a class="ui-nodisc-icon" href="#left-panel" data-icon="carat-r" data-iconpos="notext" data-shadow="false" data-iconshadow="false">Open left panel</a>
+                <a class="ui-nodisc-icon" href="#" data-icon="refresh"data-shadow="false" data-iconshadow="false" id="btn_refresh">Refresh</a>
+                <div id=headernav>
+                    <li><a href="status.html" data-ajax="false" class=footerlink><img src="img/monitor_star_48.png" border="0" id=headerstatus></a>
+                    </li>
+                    <li><a href="relay.html" data-ajax="false" class=footerlink><img src="img/hydroelectric_power_plant_48.png" border="0" id=headerrelay></a>
+                    </li>
+                    <li><a href="history.html" data-ajax="false" class=footerlink><img src="img/stats_line_chart_48.png" border="0" id=headerhistory></a>
+                    </li>
+                    <li><a href="settings.html" data-ajax="false" class=footerlink><img src="img/gear_zoom_48.png" border="0" id=headersettings></a>
+                    </li>
+                </div>
+            </div><!-- /header -->
+            <div class="ui-content" role="main" id=maincontent>
+                <div class=pagestatus></div>
+              <div data-role="tabs">
+                    <div data-role="navbar" class=paramsnavbar>
+                        <ul id=expmodtabs>
+                          <li class=mintab><a href="#parameterstab" data-ajax="false" data-theme="a" class="ui-btn-active ui-state-persist">Parameters</a></li>
+                          <li class=mintab><a href="#flagstab" data-ajax="false" data-theme="a">Flags</a></li>
+                          <li class=mintab><a href="#iotab" data-ajax="false" data-theme="a">I/O</a></li>
+                          <li class=mintab><a href="#dimmingtab" data-ajax="false" data-theme="a">Dimming</a></li>
+                        </ul>
+                    </div>
+                    <div id="parameterstab" class="ui-content">
+                        <div class=paramstable id=paramslist>
+                            <div><div id=lastupdate></div></center></div>
+                            <div><div class=paramslabel id=myreefangelidn>Forum ID</div><div class=paramsvalue id=myreefangelid></div></div>
+                            <div><div class=paramslabel id=t1n></div><div class=paramsvalue id=t1></div></div>
+                            <div><div class=paramslabel id=t2n></div><div class=paramsvalue id=t2></div></div>
+                            <div><div class=paramslabel id=t3n></div><div class=paramsvalue id=t3></div></div>
+                            <div><div class=paramslabel id=phn></div><div class=paramsvalue id=ph></div></div>
+                        </div>
+                    </div>
+                    <div id="flagstab" class="ui-content">
+                        <div id=flagslist>
+                        </div>
+                    </div>
+                    <div id="iotab" class="ui-content">
+                        <div class=paramstable id=iolist>
+                            <div><div class=paramslabel id=atolown></div><div class=paramsvalue id=atolow></div></div>
+                            <div><div class=paramslabel id=atohighn></div><div class=paramsvalue id=atohigh></div></div>
+                        </div>
+                    </div>
+                    <div id="dimmingtab" class="ui-content">
+					    <label for="pwmdinput" id="pwmd1n" class="dimminglabel"></label>
+                        <div class="dimmingvalue" id="pwmd">0%</div>
+                        <input id="pwmdinput" name="pwmdinput" value="0" type="range" max="100" min="0" data-highlight="true" disabled="disabled" data-mini="true" data-message="0" data-color='#FF9900'>                        
+					    <label for="pwmainput" id="pwma1n" class="dimminglabel"></label>
+                        <div class="dimmingvalue" id="pwma">0%</div>
+                        <input id="pwmainput" name="pwmainput" value="0" type="range" max="100" min="0" data-highlight="true" disabled="disabled" data-mini="true" data-message="1" data-color='#0000DD'>                        
+                    </div>
+                    <div id="waterleveltab" class="hiddentab">
+                        <div class=col-group>
+                            <div class=waterdiv><div id=wln></div><div class=watervalue id="wl"></div></div>
+                            <div><div class="container"><div class="glass"><div id="wllevel" class=waterlevel></div></div></div></div>
+                        </div>
+                        <div class=col-group>
+                            <div class=waterdiv><div id=wl1n></div><div class=watervalue id="wl1"></div></div>
+                            <div><div class="container"><div class="glass"><div id="wl1level" class=waterlevel></div></div></div></div>
+                        </div>
+                        <div class=col-group>
+                            <div class=waterdiv><div id=wl2n></div><div class=watervalue id="wl2"></div></div>
+                            <div><div class="container"><div class="glass"><div id="wl2level" class=waterlevel></div></div></div></div>
+                        </div>
+                        <div class=col-group>
+                            <div class=waterdiv><div id=wl3n></div><div class=watervalue id="wl3"></div></div>
+                            <div><div class="container"><div class="glass"><div id="wl3level" class=waterlevel></div></div></div></div>
+                        </div>
+                        <div class=col-group>
+                            <div class=waterdiv><div id=wl4n></div><div class=watervalue id="wl4"></div></div>
+                            <div><div class="container"><div class="glass"><div id="wl4level" class=waterlevel></div></div></div></div>
+                        </div>
+                    </div>
+                    <div id="aitab" class="hiddentab">
+                    	<h1>Aqua Illumination</h1>
+                    </div>
+                    <div id="rftab" class="hiddentab">
+                        <div class=rflabel>Mode</div>
+                        <div id=rfm class=rfvalue></div>
+                        <div id=rfmimage class=rfimage></div>
+                        <div class=rflabel>Speed</div>
+                        <div class=speedknob>
+                            <input id=rfs class=knob data-role=none data-min=0 data-max=100 data-step=1 value=0 data-angleOffset=-60 data-angleArc=120 data-fgColor=#66CC66 data-width=250 data-readOnly=true data-message="mb256" data-title="Speed">
+                        </div>
+                        <div class=rflabel>Duration</div>
+                        <div class=speedknob>
+                            <input id=rfd class=knob data-role=none data-min=0 data-max=100 data-step=1 value=0 data-angleOffset=-60 data-angleArc=120 data-fgColor=#66CC66 data-width=250 data-readOnly=true data-message="mb257" data-title="Duration">
+                        </div>
+                    </div>
+                    <div id="dcpumptab" class="hiddentab">
+                        <div class=rflabel>Mode</div>
+                        <div id=dcm class=rfvalue></div>
+                        <div id=dcmimage class=rfimage></div>
+                        <div class=rflabel>Speed</div>
+                        <div class=speedknob>
+                            <input id=dcs class=knob data-role=none data-min=0 data-max=100 data-step=1 value=0 data-angleOffset=-60 data-angleArc=120 data-fgColor=#66CC66 data-width=250 data-readOnly=true data-message="mb338" data-title="Speed">
+                        </div>
+                        <div class=rflabel>Duration</div>
+                        <div class=speedknob>
+                            <input id=dcd class=knob data-role=none data-min=0 data-max=100 data-step=1 value=0 data-angleOffset=-60 data-angleArc=120 data-fgColor=#66CC66 data-width=250 data-readOnly=true data-message="mb339" data-title="Duration">
+                        </div>
+                        <p></p>
+                    </div>
+                    <div id="customvartab" class="hiddentab">
+                        <div class=paramstable id=customvarlist>
+                            <div><div class=paramslabel id=c0n></div><div class=paramsvalue id=c0></div></div>
+                            <div><div class=paramslabel id=c1n></div><div class=paramsvalue id=c1></div></div>
+                            <div><div class=paramslabel id=c2n></div><div class=paramsvalue id=c2></div></div>
+                            <div><div class=paramslabel id=c3n></div><div class=paramsvalue id=c3></div></div>
+                            <div><div class=paramslabel id=c4n></div><div class=paramsvalue id=c4></div></div>
+                            <div><div class=paramslabel id=c5n></div><div class=paramsvalue id=c5></div></div>
+                            <div><div class=paramslabel id=c6n></div><div class=paramsvalue id=c6></div></div>
+                            <div><div class=paramslabel id=c7n></div><div class=paramsvalue id=c7></div></div>
+                        </div>
+                    </div>
+                </div>
+                <div style="max-width: 400px;" id="popupDialog" data-role="popup" data-dismissible="false">
+                    <div data-role="header" data-theme="a">
+                    <h1>Dimming Override</h1>
+                    </div>
+                    <div class="ui-content" role="main">
+                        <h3 class="ui-title" id="popupTitle"></h3>
+	                    <p>Move the slider and click Set to override.<br>
+                        Clear will disable the override and return to auto mode.
+                        </p>
+                            <label for="overrideslider">Override channel to:</label>
+                            <input id="overrideslider" value="50" type="range" max="100" min="0" data-highlight="true" data-mini="true">
+                        <a class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" href="#" data-transition="flow" data-rel="back" id="setoverride">Set</a>
+                        <a class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" href="#" data-transition="flow" data-rel="back" id="clearoverride">Clear</a>
+                        <a class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" href="#" data-rel="back">Cancel</a>
+                    </div>
+                </div>
+                <div style="max-width: 400px;" id="popupRFWaveMode" data-role="popup">
+                    <div data-role="header" data-theme="a">
+                    <h1>Wave Mode</h1>
+                    </div>
+                    <div class="ui-content" role="main">
+                    	<ul data-role="listview" data-inset="true">
+                            <li><a href="#" class="rfwavemodeitem" data-message="mb255,0">Constant</a></li>
+                            <li><a href="#" class="rfwavemodeitem" data-message="mb255,1">Lagoon</a></li>
+                            <li><a href="#" class="rfwavemodeitem" data-message="mb255,2">ReefCrest</a></li>
+                            <li><a href="#" class="rfwavemodeitem" data-message="mb255,3">Short Pulse</a></li>
+                            <li><a href="#" class="rfwavemodeitem" data-message="mb255,4">Long Pulse</a></li>
+                            <li><a href="#" class="rfwavemodeitem" data-message="mb255,5">Nutrient Transport</a></li>
+                            <li><a href="#" class="rfwavemodeitem" data-message="mb255,6">Tidal Swell</a></li>
+                            <li><a href="#" class="rfwavemodeitem" data-message="mb255,10">Storm</a></li>
+                            <li><a href="#" class="rfwavemodeitem" data-message="mb255,11">Custom</a></li>
+                        </ul>
+                        <a class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" href="#" data-rel="back">Cancel</a>
+                    </div>
+                </div>
+                <div style="max-width: 400px;" id="popupDCWaveMode" data-role="popup">
+                    <div data-role="header" data-theme="a">
+                    <h1>Wave Mode</h1>
+                    </div>
+                    <div class="ui-content" role="main">
+                    	<ul data-role="listview" data-inset="true">
+                            <li><a href="#" class="dcwavemodeitem" data-message="mb337,0">Constant</a></li>
+                            <li><a href="#" class="dcwavemodeitem" data-message="mb337,1">Lagoon</a></li>
+                            <li><a href="#" class="dcwavemodeitem" data-message="mb337,2">ReefCrest</a></li>
+                            <li><a href="#" class="dcwavemodeitem" data-message="mb337,3">Short Pulse</a></li>
+                            <li><a href="#" class="dcwavemodeitem" data-message="mb337,4">Long Pulse</a></li>
+                            <li><a href="#" class="dcwavemodeitem" data-message="mb337,5">Nutrient Transport</a></li>
+                            <li><a href="#" class="dcwavemodeitem" data-message="mb337,6">Tidal Swell</a></li>
+                            <li><a href="#" class="dcwavemodeitem" data-message="mb337,10">Storm</a></li>
+                            <li><a href="#" class="dcwavemodeitem" data-message="mb337,11">Custom</a></li>
+                            <li><a href="#" class="dcwavemodeitem" data-message="mb337,12">Else</a></li>
+                        </ul>
+                        <a class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" href="#" data-rel="back">Cancel</a>
+                    </div>
+                </div>
+                <div style="max-width: 400px;" id="popupRFSpeed" data-role="popup">
+                    <div data-role="header" data-theme="a">
+                    <h1 id=changeknobtitle></h1>
+                    </div>
+                    <div class="ui-content" role="main">
+                        <div class=rflabel id=changeknoblabel></div>
+                        <div class=speedknob>
+                            <input id=changeknob class=knob data-role=none data-min=0 data-max=100 data-step=1 value=0 data-angleOffset=-60 data-angleArc=120 data-fgColor=#66CC66 data-width=250>
+                        </div>
+                        <a class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" href="#" data-transition="flow" data-rel="back" id="setknob">Set</a>
+                        <a class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" href="#" data-rel="back">Cancel</a>
+                    </div>
+                </div>
+                            
+            </div><!-- /content -->
+            <div id="left-panel" data-role="panel">
+                <ul data-role="listview">
+                	<li data-role="list-divider" id="app_version"></li>
+                    <li data-icon="delete"><a href="#" data-rel="close">Close</a></li>
+                    <li data-role="collapsible" data-inset="false" data-iconpos="right">
+                      <h3>Modes</h3>
+                      <ul data-role="listview" data-inset="true">
+                        <li><a href="javascript:send_command('mf')" data-rel="close">Feeding</a></li>
+                        <li><a href="javascript:send_command('mw')" data-rel="close">Water Change</a></li>
+                        <li><a href="javascript:send_command('bp')" data-rel="close">Exit Mode</a></li>
+                        <li><a href="javascript:send_command('l1')" data-rel="close">Lights On</a></li>
+                        <li><a href="javascript:send_command('l0')" data-rel="close">Lights Cancel</a></li>
+                      </ul>
+                    </li><!-- /collapsible -->
+                    <li data-role="collapsible" data-inset="false" data-iconpos="right">
+                      <h3>Clear Status</h3>
+                      <ul data-role="listview" data-inset="true" id="ClearAlert">
+                        <li><a href="javascript:send_command('mt')" data-rel="close">Clear ATO</a></li>
+                        <li><a href="javascript:send_command('mo')" data-rel="close">Clear Overheat</a></li>
+                      </ul>
+                    </li><!-- /collapsible -->
+                    <li data-role="collapsible" data-inset="false" data-iconpos="right">
+                      <h3>Calibrate</h3>
+                      <ul data-role="listview" data-inset="true" id="CalibrateParams">
+                        <li><a href="javascript:send_command('cal0')" data-rel="close">pH</a></li>
+                      </ul>
+                    </li><!-- /collapsible -->
+                    <li><a href="#" data-rel="close" id="downloadlabels">Download Labels from Portal</a></li>
+                    <li><a href="#" data-rel="close" id="synctime">Sync RA Date/Time w/ Phone</a></li>
+                    <li><a href="javascript:send_command('v')" data-rel="close">Get RA Version</a></li>
+                    <li><a href="javascript:send_command('boot')" data-rel="close">Reboot Controller</a></li>
+                 </ul>
+            </div><!-- /panel -->	    
+        </div>    
+		<script type="text/javascript" src="cordova.js"></script>
+        <script type="text/javascript" src="js/index.js"></script>
+        <script>
+			CheckExpansion();
+			ReadStorage();
+			UpdateLabels();	
+			$(".knob").knob();
+		</script>
+    </body>
+</html>

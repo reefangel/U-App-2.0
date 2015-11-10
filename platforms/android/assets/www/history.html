@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+     KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="format-detection" content="telephone=no" />
+        <!-- WARNING: for iOS 7, remove the width=device-width and height=device-height attributes. See https://issues.apache.org/jira/browse/CB-4323 -->
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+        <link rel="stylesheet" type="text/css" href="css/index.css" />
+        <meta name="msapplication-tap-highlight" content="no" />
+        <link rel="stylesheet" href="css/jquery.mobile-1.4.2.min.css" />
+        <script src="js/jquery-1.9.1.min.js"></script>
+        <script src="js/jquery.mobile-1.4.2.min.js"></script> 
+		<script type="text/javascript" src="js/highstock.js"></script>
+        <script src="js/fastclick.js"></script>
+        <title>Reef Angel U-App</title>
+    </head>
+    <body>
+        <div id="panel-fixed-page1" class="jqm-demos" data-role="page" data-url="panel-fixed-page1" data-title="Reef Angel U-App">
+	        <div data-role="header" data-position="fixed" data-theme="b">
+                <div class="controllerselect">
+                <center>
+                    <select id="controller_selection" data-mini="true" data-theme="b">
+                    </select>
+                </center>
+                </div>
+                <a class="ui-nodisc-icon" href="#left-panel" data-icon="carat-r" data-iconpos="notext" data-shadow="false" data-iconshadow="false">Menu</a>
+                <a class="ui-nodisc-icon" href="#" data-icon="refresh"data-shadow="false" data-iconshadow="false" id="btn_refresh">Refresh</a>
+                <div id=headernav>
+                    <li><a href="status.html" data-ajax="false" class=footerlink><img src="img/monitor_star_48.png" border="0" id=headerstatus></a>
+                    </li>
+                    <li><a href="relay.html" data-ajax="false" class=footerlink><img src="img/hydroelectric_power_plant_48.png" border="0" id=headerrelay></a>
+                    </li>
+                    <li><a href="history.html" data-ajax="false" class=footerlink><img src="img/stats_line_chart_48.png" border="0" id=headerhistory></a>
+                    </li>
+                    <li><a href="settings.html" data-ajax="false" class=footerlink><img src="img/gear_zoom_48.png" border="0" id=headersettings></a>
+                    </li>
+                </div>
+            </div><!-- /header -->
+            <div class="ui-content" role="main" id=maincontent>
+				<div id="container"></div>
+            	<div id="graphparams">
+                    <div class=pagehistory></div>
+                    <fieldset data-role="controlgroup" id="graph_selection">
+                        <legend>Parameters to display:</legend>
+                        <input id="historyt1" type="checkbox">
+                        <label for="historyt1" id="t1n"></label>
+                        <input id="historyt2" type="checkbox">
+                        <label for="historyt2" id="t2n"></label>
+                        <input id="historyt3" type="checkbox">
+                        <label for="historyt3" id="t3n"></label>
+                        <input id="historyph" type="checkbox">
+                        <label for="historyph" id="phn"></label>
+                    </fieldset>
+                    <a href="#" id="displaygraph" class="ui-shadow ui-btn ui-corner-all">Display Graph</a>
+                </div>
+                
+            </div><!-- /content -->
+            <div id="left-panel" data-role="panel">
+                <ul data-role="listview">
+                	<li data-role="list-divider" id="app_version"></li>
+                    <li data-icon="delete"><a href="#" data-rel="close">Close</a></li>
+                    <li data-role="collapsible" data-inset="false" data-iconpos="right">
+                      <h3>Modes</h3>
+                      <ul data-role="listview" data-inset="true">
+                        <li><a href="javascript:send_command('mf')" data-rel="close">Feeding</a></li>
+                        <li><a href="javascript:send_command('mw')" data-rel="close">Water Change</a></li>
+                        <li><a href="javascript:send_command('bp')" data-rel="close">Exit Mode</a></li>
+                        <li><a href="javascript:send_command('l1')" data-rel="close">Lights On</a></li>
+                        <li><a href="javascript:send_command('l0')" data-rel="close">Lights Cancel</a></li>
+                      </ul>
+                    </li><!-- /collapsible -->
+                    <li data-role="collapsible" data-inset="false" data-iconpos="right">
+                      <h3>Clear Status</h3>
+                      <ul data-role="listview" data-inset="true" id="ClearAlert">
+                        <li><a href="javascript:send_command('mt')" data-rel="close">Clear ATO</a></li>
+                        <li><a href="javascript:send_command('mo')" data-rel="close">Clear Overheat</a></li>
+                      </ul>
+                    </li><!-- /collapsible -->
+                    <li data-role="collapsible" data-inset="false" data-iconpos="right">
+                      <h3>Calibrate</h3>
+                      <ul data-role="listview" data-inset="true" id="CalibrateParams">
+                        <li><a href="javascript:send_command('cal0')" data-rel="close">pH</a></li>
+                      </ul>
+                    </li><!-- /collapsible -->
+                    <li><a href="#" data-rel="close" id="downloadlabels">Download Labels from Portal</a></li>
+                    <li><a href="#" data-rel="close" id="synctime">Sync RA Date/Time w/ Phone</a></li>
+                    <li><a href="javascript:send_command('v')" data-rel="close">Get RA Version</a></li>
+                    <li><a href="javascript:send_command('boot')" data-rel="close">Reboot Controller</a></li>
+                 </ul>
+            </div><!-- /panel -->	    
+        </div>    
+		<script type="text/javascript" src="cordova.js"></script>
+        <script type="text/javascript" src="js/index.js"></script>        
+        <script>
+			CheckExpansion();
+			ReadStorage();
+			UpdateLabels();	
+			$(".knob").knob();
+		</script>
+    </body>
+</html>

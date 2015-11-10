@@ -1,0 +1,470 @@
+ons-list-item > ons-icon {
+  margin: 0 4px 0 0;
+  opacity: 0.8;
+}
+
+.list-item-action {
+  position: absolute;
+  right: 10px;
+  top: 0px;
+  font-size: 20px;
+  opacity: 0.3;
+}
+
+.list-item-action > ons-icon {
+  margin-top: 14px;
+}
+
+.ons-icon{
+  font-size: 32px;
+  width: 1em;    
+}
+
+.page__background{
+background-color: #fff;
+}
+
+.navigation-bar{
+background-color: #fafafa;
+}
+
+.paramslabel{
+	font-weight:bold;
+	text-align:center;
+	padding-top: 3px;
+}
+
+.paramsvalue{
+	font-size:2em;
+	font-weight:bold;
+	text-align:center;
+	color: #007ef6;
+	padding-top: 3px;
+}
+
+.lastupdatedlabel{
+	float: left;
+	width:40%;
+	padding-right: 20px;
+	text-align:right;
+}
+
+.flagslabel{
+	font-weight:bold;
+	text-align:right;
+	padding-top: 5px;
+	padding-right: 10px;
+	width:50%;
+	float: left;
+}
+
+.iolabel{
+	font-weight:bold;
+	text-align:right;
+	padding-top: 8px;
+	padding-right: 10px;
+	width:50%;
+	float: left;
+}
+
+.iovalue{
+	font-weight:bold;
+	text-align:left;
+	padding-top: 5px;
+}
+
+.dimminglabel{
+	font-size:.9em;
+	font-weight:bold;
+	text-align:right;
+	padding-top: 10px;
+	padding-right: 10px;
+	width:39%;
+	float: left;
+}
+
+.dimmingvalue{
+	font-weight:bold;
+	text-align:center;
+	padding-top: 10px;
+	width:11%;
+	float: left;
+}
+
+.dimmingoverridevalue{
+	font-weight:bold;
+	text-align:center;
+	padding-top: 1px;
+	width:11%;
+	float: left;
+}
+
+.dimmingslider{
+	font-weight:bold;
+	text-align:left;
+	padding-top: 5px;
+}
+
+.cvarlabel{
+	font-weight:bold;
+	text-align:right;
+	padding-right: 10px;
+	width:50%;
+	float: left;
+	padding-top: 10px;
+}
+
+.cvarvalue{
+	font-weight:bold;
+	text-align:left;
+	padding-top: 10px;
+}
+
+.rflabel{
+	font-weight:bold;
+	text-align:center;
+	width:100%;
+	padding-top: 10px;
+}
+
+.cvarvalue{
+	font-weight:bold;
+	text-align:left;
+	padding-top: 10px;
+}
+
+.paramsbox{
+	padding-top: 10px;
+	padding-bottom: 10px;
+	float: left;
+	width:33%;
+}
+
+.button-bar__button, .button-bar__button:active,
+:active + .button-bar__button {
+	height: 36px;
+	line-height: 36px;
+	font-size: 14px;
+	background-color: #E9EEF0;
+}
+
+.normalbutton{
+    width:40%;
+    padding-top:10px;    
+}
+
+.range {
+	width:170px;
+}
+
+.daylightslider::-webkit-slider-thumb {
+	background-color: #fd9;
+}
+
+.daylightslider::-webkit-slider-thumb:before {
+	background-color: rgba(255,103,0,0.81);	
+}
+
+.actinicslider::-webkit-slider-thumb {
+	background-color: #bdf;
+}
+
+.actinicslider::-webkit-slider-thumb:before {
+	background-color: rgba(24,103,194,0.81);
+}
+
+.redslider::-webkit-slider-thumb {
+	background-color: #fcc;
+}
+
+.redslider::-webkit-slider-thumb:before {
+	background-color: rgba(255,50,50,0.81);	
+}
+
+.blueslider::-webkit-slider-thumb {
+	background-color: #eff;
+}
+
+.blueslider::-webkit-slider-thumb:before {
+	background-color: rgba(150,200,255,0.81);	
+}
+
+.intensityslider::-webkit-slider-thumb {
+	background-color: #fdf;
+}
+
+.intensityslider::-webkit-slider-thumb:before {
+	background-color: rgba(150,100,255,0.81);	
+}
+
+.range:disabled {
+	opacity: 1;
+	cursor: default;
+	pointer-events: none;
+}
+
+.pwmeslider::-webkit-slider-thumb {
+	background-color: #bf9;
+}
+
+.pwmeslider::-webkit-slider-thumb:before {
+	background-color: rgba(90,170,40,0.81);	
+}
+
+.rfmodeconstant{
+	color:#00682e;
+}
+
+.dimmingoverridehighlight {
+    color: white;
+    text-shadow: 1px 1px 2px black, 0 0 25px blue, 0 0 5px darkblue;
+}
+
+.controllerlist{
+	width: 85%;
+	padding: 10px;
+}
+
+.controllerlistitem{
+	color:#930;
+	font-weight:bold;
+}
+
+.controllerlistheader{
+	padding-left: 15px;
+	padding-top: 5px;
+	padding-bottom: 5px;
+	background-color:#dddddd;
+	font-weight:bold;
+}
+
+.controllerlistaction{
+	padding-left: 25px;
+    font-size: 22px;
+}
+
+.relaylabel
+{
+	font-weight:bold;
+	text-align:right;
+	padding-right: 10px;
+	width:35%;
+	float: left;
+	padding-top: 20px;
+}
+
+.relaybuttons
+{
+    width: 200px;
+}
+.relayblankclass
+{
+	background-color:#eee !important;
+	color: rgba(18,114,224,0.77) !important;
+}
+
+.relaygreenclass
+{
+	background-color:#009933 !important;
+	color: #fff !important;
+}
+
+.relayredclass
+{
+	background-color: #F00 !important;
+	color: #fff !important;
+}
+
+.graphlist{
+	width: 30%;
+	padding: 10px;
+	text-align:left;
+}
+
+.nobottomline{
+	border-bottom:0px;
+}
+
+.memorylist{
+	width: 90%;
+	text-align:left;
+}
+
+.timetext{
+	font-size:1em;
+}
+
+.item-accordion {
+  line-height: 37px;
+  padding-top: 0;
+  padding-bottom: 0;
+  transition: 0.07s all linear;
+}
+
+.item-accordion.ng-hide {
+  line-height: 0px;
+}
+
+.item-accordion.ng-hide-add,
+.item-accordion.ng-hide-remove {
+  display: block !important;
+}
+
+.accordiontitle {
+  background: #F5F5F5;
+}
+
+.accordionactive {
+  background: #EEEEF3;
+}
+
+.whitespace
+{
+	white-space: pre;
+}
+
+[ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
+  display: none !important;
+}
+
+.chartheight
+{
+	height:110%;
+	margin-top: -200px;
+}
+
+@media only screen and (max-width: 480px), only screen and (max-device-width: 480px) {
+h4{
+	font-size:.8em;        
+}
+p{
+	//font-size:.7em;        
+}
+.paramsvalue{
+	font-size:1em;
+}
+
+.paramsvalue{
+	font-size:1.4em;
+}
+
+.paramslabel{
+	font-size:0.7em;
+}
+    
+.lastupdatedlabel{
+	width:35%;
+	font-size:0.6em;
+}
+    
+.lastupdatedvalue{
+	font-size:0.6em;
+}
+    
+ons-list-item {
+  font-size: .7em;
+}
+.refreshbutton{
+  font-size: .7em;        
+}
+.toolbar-button {
+  font-size: 1em;
+}
+.ons-icon{
+  font-size: 20px;
+  width: 1em;    
+}
+.button-bar__button, .button-bar__button:active,
+:active + .button-bar__button {
+	height: 30px;
+	line-height: 30px;
+	font-size: .6em;
+}
+.button--large--cta{
+	font-size: .7em;
+}
+.button--cta{
+    width:40%;
+    padding-top:0px;    
+	font-size: .7em;
+}
+.normalbutton{
+    width:40%;
+    padding-top:0px;    
+	font-size: .7em;
+}
+.controllerlistitem{
+    font-size: .7em;
+}
+.back-button__label{
+    font-size: .7em;
+}
+.navigation-bar__title{
+    font-size: .7em;
+}
+.ons-back-button__icon{
+  font-size: 20px !important;
+  width: 1em !important;
+}
+.controllerlistaction{
+	padding-left: 25px;
+    font-size: .8em;
+}
+.rflabel{
+	font-weight:bold;
+	text-align:center;
+	width:100%;
+	padding-top: 10px;
+    font-size: .7em;
+}
+.list__header{
+    font-size: .7em;        
+}
+.flagslabel{
+    font-size: .7em;
+}
+
+.iolabel{
+    font-size: .7em;
+}
+
+.iovalue{
+    font-size: .7em;
+}
+
+.dimminglabel{
+    font-size: .7em;
+}
+
+.dimmingvalue{
+    font-size: .7em;
+}
+.range {
+	width:40%;
+}
+.cvarlabel{
+   font-size: .7em;
+}
+
+.cvarvalue{
+   font-size: .7em;
+}
+.checkbox{
+   font-size: .7em;        
+}
+.graphlist{
+	width: 80%;
+	padding: 10px;
+	text-align:left;
+}
+.relaylabel
+{
+   font-size: .7em;
+	width:35%;
+}
+    
+.relaybuttons
+{
+    width: 55%;
+}
+    

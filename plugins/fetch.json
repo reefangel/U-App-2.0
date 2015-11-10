@@ -1,0 +1,27 @@
+{
+    "com.plugin.datepicker": {
+        "source": {
+            "type": "git",
+            "url": "https://github.com/VitaliiBlagodir/cordova-plugin-datepicker",
+            "subdir": "."
+        }
+    },
+    "org.apache.cordova.device": {
+        "source": {
+            "type": "local",
+            "path": "C:\\Users\\Owner\\.plugman\\cache\\org.apache.cordova.device\\0.2.9\\package"
+        }
+    },
+    "org.apache.cordova.splashscreen": {
+        "source": {
+            "type": "local",
+            "path": "C:\\Users\\Owner\\.plugman\\cache\\org.apache.cordova.splashscreen\\0.3.0\\package"
+        }
+    },
+    "org.apache.cordova.statusbar": {
+        "source": {
+            "type": "local",
+            "path": "C:\\Users\\Owner\\.plugman\\cache\\org.apache.cordova.statusbar\\0.1.3\\package"
+        }
+    }
+}
