@@ -11,6 +11,14 @@ var memoryraw;
 var MemString;
 var MemURL;
 var memindex;
+var mqtt;
+var cloudusername;
+var cloudpassword;
+var dropdownscope;
+var parametersscope;
+var settingsscope;
+var relayscope;
+var currentstorage;
 
 var rfmodes = ["Constant","Lagoon","Reef Crest","Short Pulse","Long Pulse","Nutrient Transport","Tidal Swell","Feeding","Feeding","Night","Storm","Custom","Else"];
 var rfimages= ["constant.png","lagoon.png","reefcrest.png","shortpulse.png","longpulse.png","ntm.png","tsm.png","feeding.png","feeding.png","night.png","storm.png","custom.png","custom.png"];
@@ -21,11 +29,14 @@ var pwmchannels = ["PWMD","PWMA","PWMD2","PWMA2","PWME0","PWME1","PWME2","PWME3"
 
 var app = ons.bootstrap('uapp',['ngStorage','ngAnimate']);
 
-app.controller('DropdownController', function($rootScope, $scope, $http, $localStorage){
+app.controller('DropdownController', function($rootScope, $scope, $http, $localStorage, $timeout){
     $scope.rfmodes = [{"name":"Constant","color":"#00682e","id":"0"},{"name":"Lagoon","color":"#ffee00","id":"1"},{"name":"Reef Crest","color":"#ffee00","id":"2"},{"name":"Short Pulse","color":"#16365e","id":"3"},{"name":"Long Pulse","color":"#d99593","id":"4"},{"name":"Nutrient Transport","color":"#eb70ff","id":"5"},{"name":"Tidal Swell","color":"#eb70ff","id":"6"},{"name":"Feeding","color":"#F5C127","id":"7"},{"name":"Night","color":"#90C3D4","id":"9"},{"name":"Storm","color":"black","id":"10"},{"name":"Custom","color":"#72BD4D","id":"11"}];
     $scope.dcmodes = [{"name":"Constant","color":"#00682e","id":"0"},{"name":"Lagoon","color":"#ffee00","id":"1"},{"name":"Reef Crest","color":"#ffee00","id":"2"},{"name":"Short Pulse","color":"#16365e","id":"3"},{"name":"Long Pulse","color":"#d99593","id":"4"},{"name":"Nutrient Transport","color":"#eb70ff","id":"5"},{"name":"Tidal Swell","color":"#eb70ff","id":"6"},{"name":"Feeding","color":"#F5C127","id":"7"},{"name":"Night","color":"#90C3D4","id":"9"},{"name":"Storm","color":"black","id":"10"},{"name":"Custom","color":"#72BD4D","id":"11"},{"name":"Else","color":"#B28DC4","id":"12"},{"name":"Sine","color":"#47ADAC","id":"13"},{"name":"Gyre","color":"#768C8C","id":"14"}];
 	$scope.$storage = $localStorage;
 	//$localStorage.controllers = null;
+	dropdownscope=$scope;
+	relayscope=$scope;
+	loaddefaultvalues();
 	if ($localStorage.controllers != null)
 	{
 		$scope.activecontroller=$localStorage.activecontroller;
@@ -38,6 +49,7 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 	}
 	else
 	{
+		$localStorage.json=new Object();
 		$localStorage.controllers=[];
 		$localStorage.jsonarray=[];
 		$localStorage.jsonlabelsarray=[];
@@ -50,7 +62,6 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 //	console.log("$localStorage.jsonlabelsarray: " + $localStorage.jsonlabelsarray);
 //	console.log("$scope.activecontroller: " + $scope.activecontroller);
 //	console.log("$localStorage.activecontrollerid: " + $localStorage.activecontrollerid);
-	
 	$scope.$on('msg', function(event, msg) {
 		//console.log('DropdownController'+msg);
 		if (msg=="popoverclose")
@@ -90,6 +101,7 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 				$localStorage.json=json;
 				$localStorage.jsonarray[$localStorage.activecontrollerid]=json;
 				$rootScope.$broadcast('msg', 'update');
+				console.log(statusindex);
 				if (statusindex==3) tabbar.loadPage('dimming.html');
 				if (statusindex==5) tabbar.loadPage('rf.html');
 				if (statusindex==7) tabbar.loadPage('dimmingoverride.html');
@@ -188,6 +200,8 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 
 app.controller('Parameters', function($rootScope, $scope, $timeout, $localStorage) {
 	$scope.$storage = $localStorage;
+	parametersscope=$scope;
+	currentstorage=$localStorage;
 	$scope.$on('msg', function(event, msg) {
 		console.log('Parameters'+msg);
 		if (msg=="update")
@@ -198,9 +212,8 @@ app.controller('Parameters', function($rootScope, $scope, $timeout, $localStorag
 		}
 		if (msg=="paramsok")
 		{
-			loaddefaultvalues($scope);
-			loadlabels($scope);
 			UpdateParams($scope,$timeout,$localStorage);
+			
 		}
 		if (msg=="overrideok")
 		{
@@ -358,16 +371,18 @@ app.controller('Parameters', function($rootScope, $scope, $timeout, $localStorag
 	$scope.pwmoverride = "0";
 	if ($localStorage.json != null && $localStorage.controllers.length>0) json=$localStorage.json
 	if ($localStorage.jsonlabels != null && $localStorage.controllers.length>0) jsonlabels=$localStorage.jsonlabels
-	loaddefaultvalues($scope);
-	loadlabels($scope);
+	if (json==null) json=new Object();
+	if (json.RA==null) json.RA=new Object();
+	console.log(json);
 	UpdateParams($scope,$timeout,$localStorage);
 });
 
 
 app.controller('Settings', function($rootScope, $scope, $timeout, $localStorage) {
-
 	$scope.$storage = $localStorage;
 	$scope.controllers=$localStorage.controllers;
+	settingsscope=$scope;
+	statusindex=0;
 	$scope.$on('msg', function(event, msg) {
 		console.log('Settings'+msg);
 		if (msg=="update")
@@ -380,20 +395,26 @@ app.controller('Settings', function($rootScope, $scope, $timeout, $localStorage)
 		$scope.controllername=$localStorage.controllers[editcontrollerid].name;
 		$scope.controllerip=$localStorage.controllers[editcontrollerid].ipaddress;
 		$scope.controllerport=$localStorage.controllers[editcontrollerid].port;
+		$scope.cloudusername=$localStorage.controllers[editcontrollerid].cloudusername;
+		$scope.cloudpassword=$localStorage.controllers[editcontrollerid].cloudpassword;
 	}
 	$scope.saveaddcontroller=function(){
+		
 		if (editcontrollerid==null)
 		{
 			$localStorage.controllers.push({
 				name : $scope.controllername,
 				ipaddress : $scope.controllerip,
-				port : $scope.controllerport
-			}); 
+				port : $scope.controllerport,
+				cloudusername: $scope.cloudusername,
+				cloudpassword: $scope.cloudpassword
+			});
 			$localStorage.jsonarray.push(null);
 			$localStorage.jsonlabelsarray.push(null);
 			$localStorage.activecontroller=$scope.controllername;
 			$localStorage.activecontrollerid=$localStorage.controllers.length-1;
-			json=null;
+			json=new Object();
+			json.RA=new Object();
 			$localStorage.json=null;
 			jsonlabel=null;
 			$localStorage.jsonlabel=null;
@@ -405,12 +426,15 @@ app.controller('Settings', function($rootScope, $scope, $timeout, $localStorage)
 			$localStorage.controllers[editcontrollerid].name=$scope.controllername;
 			$localStorage.controllers[editcontrollerid].ipaddress=$scope.controllerip;
 			$localStorage.controllers[editcontrollerid].port=$scope.controllerport;
+			$localStorage.controllers[editcontrollerid].cloudusername=$scope.cloudusername;
+			$localStorage.controllers[editcontrollerid].cloudpassword=$scope.cloudpassword;
 			if (editcontrollerid==$localStorage.activecontrollerid)
 			{
 				$localStorage.activecontroller=$scope.controllername;
 				$rootScope.$broadcast('msg', 'popoverclose');
 			}
 		}
+		loaddefaultvalues();
 		$scope.loadcontrollertab();
 	}
 	$scope.loadcontrollertab=function(){
@@ -434,6 +458,7 @@ app.controller('Settings', function($rootScope, $scope, $timeout, $localStorage)
 		  callback: function(idx) {
 			switch (idx) {
 			  case 1:
+			    MQTTdisconnect();
 				delete $localStorage.controllers[id];
 				$localStorage.controllers = $localStorage.controllers.filter(function(n){ return n != null }); 
 				delete $localStorage.jsonarray[id];
@@ -451,6 +476,7 @@ app.controller('Settings', function($rootScope, $scope, $timeout, $localStorage)
 					$scope.activecontroller=null;
 					$localStorage.activecontroller=null;
 					$localStorage.activecontrollerid=null;
+					editcontrollerid=null;
 					$rootScope.$broadcast('msg', 'paramsok');
 					$rootScope.$broadcast('msg', 'popoverclose');
 				}
@@ -477,6 +503,8 @@ app.controller('PopoverController', function($rootScope, $scope, $http, $localSt
 
 app.controller('Relay', function($rootScope, $scope, $timeout, $localStorage) {
 	$scope.$storage = $localStorage;
+	relayscope=$scope;
+	statusindex=0;
 	$scope.$on('msg', function(event, msg) {
 		console.log('Relay'+msg);
 		if (msg=="update")
@@ -486,8 +514,6 @@ app.controller('Relay', function($rootScope, $scope, $timeout, $localStorage) {
 		}
 		if (msg=="paramsok")
 		{
-			loaddefaultvalues($scope);
-			loadlabels($scope);
 			UpdateParams($scope,$timeout,$localStorage);
 		}
 	});
@@ -499,16 +525,12 @@ app.controller('Relay', function($rootScope, $scope, $timeout, $localStorage) {
 		console.log("exp1 relay box");
 		
 	}
-	loaddefaultvalues($scope);
-	loadlabels($scope);
 	UpdateParams($scope,$timeout,$localStorage);
 });
 
 app.controller('Graph', function($rootScope, $scope, $http, $timeout, $localStorage){
 	$scope.$storage = $localStorage;
 	$scope.showgraphlist=true;
-	loaddefaultvalues($scope);
-	loadlabels($scope);
 	UpdateParams($scope,$timeout,$localStorage);
 	$scope.$on('msg', function(event, msg) {
 		console.log('Graph'+msg);
@@ -518,8 +540,6 @@ app.controller('Graph', function($rootScope, $scope, $http, $timeout, $localStor
 		}
 		if (msg=="paramsok")
 		{
-			loaddefaultvalues($scope);
-			loadlabels($scope);
 			UpdateParams($scope,$timeout,$localStorage);
 		}
 	});
@@ -757,14 +777,34 @@ app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $
 function UpdateParams($scope,$timeout,$localStorage)
 {
 	$scope.$storage = $localStorage;
+	console.log("Updating...");
+	if ($localStorage.controllers.length>0)
+	{
+		//MQTTdisconnect();
+		cloudusername=$localStorage.controllers[$localStorage.activecontrollerid].cloudusername;
+		cloudpassword=$localStorage.controllers[$localStorage.activecontrollerid].cloudpassword;
+		if (cloudusername!=null && cloudpassword!=null)
+		{
+			$scope.cloudenabled=true;
+			$scope.cloudstatus=json.RA.cloudstatus;
+		}
+		if (mqtt==null && cloudusername!=null && cloudpassword!=null)
+		{
+			$scope.cloudstatus="Connecting...";
+			json.RA.cloudstatus="Connecting...";
+			MQTTconnect();
+		}
+	}
 	if (json!=null)
 	{
-		$scope.lastupdated=json.RA.lastrefresh;
-		$scope.dimmingexpansionenabled = ((json.RA.EM & 1) == 1)
-				if (json.RA.C0>0 || json.RA.C1>0 || json.RA.C2>0 || json.RA.C3>0 || json.RA.C4>0 || json.RA.C5>0 || json.RA.C6>0 || json.RA.C7>0) $scope.cvarenabled=true;
-		$scope.rfenabled = ((json.RA.EM & 2) == 2)
-				$scope.dcpumpenabled = ((json.RA.EM1 & 2) == 2)
-				$scope.forumid = json.RA.ID;
+		if (json.RA.lastrefresh == null)
+			$scope.lastupdated="Never";
+		else
+			$scope.lastupdated=json.RA.lastrefresh;
+		if (json.RA.ID == null)
+			$scope.forumid = "Unknown";
+		else
+			$scope.forumid = json.RA.ID;
 		$scope.t1 = (json.RA.T1/10).toFixed(1);
 		$scope.t2 = (json.RA.T2/10).toFixed(1);
 		$scope.t3 = (json.RA.T3/10).toFixed(1);
@@ -774,8 +814,6 @@ function UpdateParams($scope,$timeout,$localStorage)
 			$scope.stardimmingenabled=true;
 			$scope.pwmd2 = json.RA.PWMD2;
 			$scope.pwma2 = json.RA.PWMA2;
-			if (json.RA.PWMD2O<=100) $scope.pwmd2class = "dimmingoverridehighlight";
-			if (json.RA.PWMA2O<=100) $scope.pwma2class = "dimmingoverridehighlight";
 			$scope.alarm = json.RA.ALARM;
 			$scope.leak = json.RA.LEAK;
 		}
@@ -803,6 +841,7 @@ function UpdateParams($scope,$timeout,$localStorage)
 			if ((json.RA.REM & 128) == 128)
 				$scope.exp8enabled=true;
 		}
+		CheckExpansion($scope);
 		if ((json.RA.EM & 1) == 1)
 		{
 			$scope.pwme0 = json.RA.PWME0;
@@ -811,13 +850,8 @@ function UpdateParams($scope,$timeout,$localStorage)
 			$scope.pwme3 = json.RA.PWME3;
 			$scope.pwme4 = json.RA.PWME4;
 			$scope.pwme5 = json.RA.PWME5;
-			if (json.RA.PWME0O<=100) $scope.pwme0class = "dimmingoverridehighlight";
-			if (json.RA.PWME1O<=100) $scope.pwme1class = "dimmingoverridehighlight";
-			if (json.RA.PWME2O<=100) $scope.pwme2class = "dimmingoverridehighlight";
-			if (json.RA.PWME3O<=100) $scope.pwme3class = "dimmingoverridehighlight";
-			if (json.RA.PWME4O<=100) $scope.pwme4class = "dimmingoverridehighlight";
-			if (json.RA.PWME5O<=100) $scope.pwme5class = "dimmingoverridehighlight";
 		}
+		CheckDimmingOverride($scope);
 		if ((json.RA.EM & 2) == 2)
 		{
 			$scope.rfm = rfmodes[json.RA.RFM];
@@ -831,68 +865,28 @@ function UpdateParams($scope,$timeout,$localStorage)
 			$scope.rfg = json.RA.RFG;
 			$scope.rfb = json.RA.RFB;
 			$scope.rfi = json.RA.RFI;
-			if (json.RA.RFWO<=100) $scope.rfwclass = "dimmingoverridehighlight";
-			if (json.RA.RFRBO<=100) $scope.rfrbclass = "dimmingoverridehighlight";
-			if (json.RA.RFRO<=100) $scope.rfrclass = "dimmingoverridehighlight";
-			if (json.RA.RFGO<=100) $scope.rfgclass = "dimmingoverridehighlight";
-			if (json.RA.RFBO<=100) $scope.rfbclass = "dimmingoverridehighlight";
-			if (json.RA.RFIO<=100) $scope.rficlass = "dimmingoverridehighlight";
-			
+			CheckRadionOverride($scope);
 		}
 		if ((json.RA.EM & 8) == 8)
-		{
-			$scope.salinityenabled=true;
-			$scope.saln = "Salinity";
 			$scope.sal = (json.RA.SAL/10).toFixed(1);
-		}
 		if ((json.RA.EM & 16) == 16)
-		{
-			$scope.orpenabled=true;
-			$scope.orpn = "ORP";
 			$scope.orp = json.RA.ORP;
-		}
 		if ((json.RA.EM & 32) == 32)
 		{
-			$scope.io0n = "I/O Channel 0";
-			$scope.io1n = "I/O Channel 1";
-			$scope.io2n = "I/O Channel 2";
-			$scope.io3n = "I/O Channel 3";
-			$scope.io4n = "I/O Channel 4";
-			$scope.io5n = "I/O Channel 5";
-			$scope.io0 = (json.RA.IO & 1)/1;
-			$scope.io1 = (json.RA.IO & 2)/2;
-			$scope.io2 = (json.RA.IO & 4)/4;
-			$scope.io3 = (json.RA.IO & 8)/8;
-			$scope.io4 = (json.RA.IO & 16)/16;
-			$scope.io5 = (json.RA.IO & 32)/32;
+			CheckIO($scope);
 		}
 		if ((json.RA.EM & 64) == 64)
-		{
-			$scope.pheenabled=true;
-			$scope.phen = "pH Expansion";
 			$scope.phe = (json.RA.PHE/100).toFixed(2);
-		}
 		if ((json.RA.EM & 128) == 128)
 		{
-			$scope.wln = "Water Level 0";
-			$scope.wl1n = "Water Level 1";
-			$scope.wl2n = "Water Level 2";
-			$scope.wl3n = "Water Level 3";
-			$scope.wl4n = "Water Level 4";
 			$scope.wl = json.RA.WL;
 			$scope.wl1 = json.RA.WL1;
 			$scope.wl2 = json.RA.WL2;
 			$scope.wl3 = json.RA.WL3;
 			$scope.wl4 = json.RA.WL4;
-			if (json.RA.WL!=null) $scope.wlenabled=true;
-			if (json.RA.WL1!=null) $scope.multiwlenabled=true;
 		}
 		if ((json.RA.EM1 & 1) == 1)
-		{
-			$scope.humenabled=true;
-			$scope.humn = "Humidity";
 			$scope.hum = json.RA.HUM;
-		}
 		if ((json.RA.EM1 & 2) == 2)
 		{
 			$scope.dcm = rfmodes[json.RA.DCM];
@@ -902,48 +896,15 @@ function UpdateParams($scope,$timeout,$localStorage)
 			$scope.dcimage = rfimages[json.RA.DCM];
 		}
 		if ((json.RA.EM1 & 8) == 8)
-		{
-			$scope.parenabled=true;
-			$scope.parn = "PAR";
 			$scope.par = json.RA.PAR;
-		}
-		if (json.RA.AF>0 || json.RA.SF>0)
-			$scope.lbl_NoFlags = "";
-		else
-			$scope.lbl_NoFlags = "No alert flags";
-		if ((json.RA.AF & 1) == 1)
-		{
-			$scope.lbl_ATOTimeout = "ATO Timeout";
-			$scope.ATOTimeout = "clock"
-		}
-		if ((json.RA.AF & 2) == 2)
-		{
-			$scope.lbl_Overheat = "Overheat";
-			$scope.Overheat = "overheat"
-		}
-		if ((json.RA.AF & 4) == 4)
-		{
-			$scope.lbl_BusLock = "Bus Lock";
-			$scope.BusLock = "buserror"
-		}
-		if ((json.RA.AF & 8) == 8)
-		{
-			$scope.leakn = "Water Leak";
-			$scope.Leak = "leak"
-		}
-		if ((json.RA.SF & 1) == 1)
-		{
-			$scope.lbl_LightsOn = "Lights On";
-			$scope.LightsOn = "lights"
-		}
+		CheckFlags($scope);
 		$scope.atohigh = json.RA.ATOHIGH;
 		$scope.atolow = json.RA.ATOLOW;
 		if (json.RA.PWMD!=null)
 			$scope.pwmd = json.RA.PWMD;
 		if (json.RA.PWMA!=null)
 			$scope.pwma = json.RA.PWMA;
-		if (json.RA.PWMDO<=100) $scope.pwmdclass = "dimmingoverridehighlight";
-		if (json.RA.PWMAO<=100) $scope.pwmaclass = "dimmingoverridehighlight";
+		CheckCvar($scope);
 		$scope.c0 = json.RA.C0;
 		$scope.c1 = json.RA.C1;
 		$scope.c2 = json.RA.C2;
@@ -1055,428 +1016,461 @@ function UpdateParams($scope,$timeout,$localStorage)
 			$scope.speedupdatechange=$scope.rfs;
 			$scope.durationupdatechange=$scope.rfd;
 		}
-		for (a=1;a<=8;a++)
-		{
-			if ((json.RA.RON & (1<<(a-1))) == 0 && (json.RA.ROFF & (1<<(a-1))) == (1<<(a-1)))
-			{
-				$scope["r"+a+"on"]=false;
-				$scope["r"+a+"off"]=false;
-				$scope["r"+a+"auto"]=true;
-				if ((json.RA.R & (1<<(a-1))) == (1<<(a-1)))
-					$scope["r"+a+"autoclass"]="relaygreenclass";
-				else
-					$scope["r"+a+"autoclass"]="relayredclass";
-				$scope["r"+a+"onclass"]="relayblankclass";
-				$scope["r"+a+"offclass"]="relayblankclass";
-			}
-			if ((json.RA.RON & (1<<(a-1))) == (1<<(a-1)))
-			{
-				$scope["r"+a+"onclass"]="relaygreenclass";
-				$scope["r"+a+"offclass"]="relayblankclass";
-				$scope["r"+a+"autoclass"]="relayblankclass";
-				$scope["r"+a+"on"]=true;
-				$scope["r"+a+"off"]=false;
-				$scope["r"+a+"auto"]=false;
-			}
-			if ((json.RA.ROFF & (1<<(a-1))) == 0)
-			{
-				$scope["r"+a+"onclass"]="relayblankclass";
-				$scope["r"+a+"offclass"]="relayredclass";
-				$scope["r"+a+"autoclass"]="relayblankclass";
-				$scope["r"+a+"on"]=false;
-				$scope["r"+a+"off"]=true;
-				$scope["r"+a+"auto"]=false;
-			}
-			for (b=1;b<=8;b++)
-			{
-				if ((json.RA["RON"+a] & (1<<(b-1))) == 0 && (json.RA["ROFF"+a] & (1<<(b-1))) == (1<<(b-1)))
-				{
-					$scope["r"+a+b+"on"]=false;
-					$scope["r"+a+b+"off"]=false;
-					$scope["r"+a+b+"auto"]=true;
-					if ((json.RA.R & (1<<(b-1))) == (1<<(b-1)))
-						$scope["r"+a+b+"autoclass"]="relaygreenclass";
-					else
-						$scope["r"+a+b+"autoclass"]="relayredclass";
-					$scope["r"+a+b+"onclass"]="relayblankclass";
-					$scope["r"+a+b+"offclass"]="relayblankclass";
-				}
-				if ((json.RA["RON"+a] & (1<<(b-1))) == (1<<(b-1)))
-				{
-					$scope["r"+a+b+"onclass"]="relaygreenclass";
-					$scope["r"+a+b+"offclass"]="relayblankclass";
-					$scope["r"+a+b+"autoclass"]="relayblankclass";
-					$scope["r"+a+b+"on"]=true;
-					$scope["r"+a+b+"off"]=false;
-					$scope["r"+a+b+"auto"]=false;
-				}
-				if ((json.RA["ROFF"+a] & (1<<(b-1))) == 0)
-				{
-					$scope["r"+a+b+"onclass"]="relayblankclass";
-					$scope["r"+a+b+"offclass"]="relayredclass";
-					$scope["r"+a+b+"autoclass"]="relayblankclass";
-					$scope["r"+a+b+"on"]=false;
-					$scope["r"+a+b+"off"]=true;
-					$scope["r"+a+b+"auto"]=false;
-				}
-			}			
-		}
+		CheckRelay($scope);
+	}
+	loadlabels($scope);
+}
+
+function CheckFlags($scope)
+{
+	$scope.alertnoflag=!(json.RA.AF>0 || json.RA.SF>0);
+	$scope.alertato=((json.RA.AF & 1) == 1);
+	$scope.alertoverheat=((json.RA.AF & 2) == 2);
+	$scope.alertbuslock=((json.RA.AF & 4) == 4);
+	$scope.alertleak=((json.RA.AF & 8) == 8);
+	$scope.alertlightson=((json.RA.SF & 1) == 1);
+}
+
+function CheckIO($scope)
+{
+	$scope.io0 = (json.RA.IO & 1)/1;
+	$scope.io1 = (json.RA.IO & 2)/2;
+	$scope.io2 = (json.RA.IO & 4)/4;
+	$scope.io3 = (json.RA.IO & 8)/8;
+	$scope.io4 = (json.RA.IO & 16)/16;
+	$scope.io5 = (json.RA.IO & 32)/32;
+}
+
+function CheckExpansion($scope)
+{
+	$scope.dimmingexpansionenabled = ((json.RA.EM & 1) == 1);
+	$scope.rfenabled = ((json.RA.EM & 2) == 2);
+	$scope.salinityenabled = ((json.RA.EM & 8) == 8);
+	$scope.orpenabled = ((json.RA.EM & 16) == 16);
+	$scope.ioenabled = ((json.RA.EM & 32) == 32);
+	$scope.pheenabled = ((json.RA.EM & 64) == 64);
+	if ((json.RA.EM & 128) == 128)
+	{
+		$scope.wlenabled=true;
+		$scope.multiwlenabled=true;
+	}
+	$scope.humenabled = ((json.RA.EM1 & 1) == 1);
+	$scope.dcpumpenabled = ((json.RA.EM1 & 2) == 2);
+	$scope.parenabled = ((json.RA.EM1 & 8) == 8);
+}
+
+function CheckCvar($scope)
+{
+	if (json.RA.C0>0 || json.RA.C1>0 || json.RA.C2>0 || json.RA.C3>0 || json.RA.C4>0 || json.RA.C5>0 || json.RA.C6>0 || json.RA.C7>0) $scope.cvarenabled=true;
+}
+
+function CheckDimmingOverride($scope)
+{
+	if (json.RA.PWMDO<=100)
+	{
+		$scope.pwmdclass = "dimmingoverridehighlight";
+		$scope.pwmd = json.RA.PWMDO;
+	}
+	else
+	{
+		$scope.pwmdclass = "";
+		$scope.pwmd = json.RA.PWMD;
+	}
+	if (json.RA.PWMAO<=100)
+	{
+		$scope.pwmaclass = "dimmingoverridehighlight";
+		$scope.pwma = json.RA.PWMAO;
+	}
+	else
+	{
+		$scope.pwmaclass = "";
+		$scope.pwma = json.RA.PWMA;
+	}
+	if (json.RA.PWMD2O<=100)
+	{
+		$scope.pwmd2class = "dimmingoverridehighlight";
+		$scope.pwmd2 = json.RA.PWMD2O;
+	}
+	else
+	{
+		$scope.pwmd2class = "";
+		$scope.pwmd2 = json.RA.PWMD2;
+	}
+	if (json.RA.PWMA2O<=100)
+	{
+		$scope.pwma2class = "dimmingoverridehighlight";
+		$scope.pwma2 = json.RA.PWMA2O;
+	}
+	else
+	{
+		$scope.pwma2class = "";
+		$scope.pwma2 = json.RA.PWMA2;
+	}
+	if (json.RA.PWME0O<=100) 
+	{
+		$scope.pwme0class = "dimmingoverridehighlight";
+		$scope.pwme0 = json.RA.PWME0O;
+	}
+	else
+	{
+		$scope.pwme0class = "";
+		$scope.pwme0 = json.RA.PWME0;
+	}
+	if (json.RA.PWME1O<=100) 
+	{
+		$scope.pwme1class = "dimmingoverridehighlight";
+		$scope.pwme1 = json.RA.PWME1O;
+	}
+	else
+	{
+		$scope.pwme1class = "";
+		$scope.pwme1 = json.RA.PWME1;
+	}
+	if (json.RA.PWME2O<=100) 
+	{
+		$scope.pwme2class = "dimmingoverridehighlight";
+		$scope.pwme2 = json.RA.PWME2O;
+	}
+	else
+	{
+		$scope.pwme2class = "";
+		$scope.pwme2 = json.RA.PWME2;
+	}
+	if (json.RA.PWME3O<=100) 
+	{
+		$scope.pwme3class = "dimmingoverridehighlight";
+		$scope.pwme3 = json.RA.PWME3O;
+	}
+	else
+	{
+		$scope.pwme3class = "";
+		$scope.pwme3 = json.RA.PWME3;
+	}
+	if (json.RA.PWME4O<=100) 
+	{
+		$scope.pwme4class = "dimmingoverridehighlight";
+		$scope.pwme4 = json.RA.PWME4O;
+	}
+	else
+	{
+		$scope.pwme4class = "";
+		$scope.pwme4 = json.RA.PWME4;
+	}
+	if (json.RA.PWME5O<=100) 
+	{
+		$scope.pwme5class = "dimmingoverridehighlight";
+		$scope.pwme5 = json.RA.PWME5O;
+	}
+	else
+	{
+		$scope.pwme5class = "";
+		$scope.pwme5 = json.RA.PWME5;
 	}
 }
 
-function loaddefaultvalues($scope)
+function CheckRadionOverride($scope)
 {
-	$scope.lbl_forumid = "Forum username:";
-	$scope.forumid = "Unknown";
-	$scope.lastupdated = "Never";
-	$scope.t1n = "Temp 1";
-	$scope.t1 = "0.0";
-	$scope.t2n = "Temp 2";
-	$scope.t2 = "0.0";
-	$scope.t3n = "Temp 3";
-	$scope.t3 = "0.0";
-	$scope.phn = "pH";
-	$scope.ph = "0.00";
-	$scope.lbl_NoFlags="No alert flags";
-	$scope.atohighn="ATO High";
-	$scope.atohigh="0";
-	$scope.atolown="ATO Low";
-	$scope.atolow="0";
-	$scope.pwmd1n="Daylight Channel";
-	$scope.pwmd="0";
-	$scope.pwma1n="Actinic Channel";
-	$scope.pwma="0";
-	$scope.alarmn="Alarm";
-	$scope.alarm="0";
-	$scope.leakn="Leak";
-	$scope.leak="0";
-	$scope.pwmd2n="Daylight Channel 2";
-	$scope.pwmd2="0";
-	$scope.pwma2n="Actinic Channel 2";
-	$scope.pwma2="0";
-	$scope.pwme0n="Dimming Channel 0";
-	$scope.pwme0="0";
-	$scope.pwme1n="Dimming Channel 1";
-	$scope.pwme1="0";
-	$scope.pwme2n="Dimming Channel 2";
-	$scope.pwme2="0";
-	$scope.pwme3n="Dimming Channel 3";
-	$scope.pwme3="0";
-	$scope.pwme4n="Dimming Channel 4";
-	$scope.pwme4="0";
-	$scope.pwme5n="Dimming Channel 5";
-	$scope.pwme5="0";
-	$scope.c0n="Custom Var 0:";
-	$scope.c0="0";
-	$scope.c1n="Custom Var 1:";
-	$scope.c1="0";
-	$scope.c2n="Custom Var 2:";
-	$scope.c2="0";
-	$scope.c3n="Custom Var 3:";
-	$scope.c3="0";
-	$scope.c4n="Custom Var 4:";
-	$scope.c4="0";
-	$scope.c5n="Custom Var 5:";
-	$scope.c5="0";
-	$scope.c6n="Custom Var 6:";
-	$scope.c6="0";
-	$scope.c7n="Custom Var 7:";
-	$scope.c7="0";
-	$scope.rfwn="White Channel";
-	$scope.rfw="0";
-	$scope.rfrbn="Royal Blue Channel";
-	$scope.rfrb="0";
-	$scope.rfrn="Red Channel";
-	$scope.rfr="0";
-	$scope.rfgn="Green Channel";
-	$scope.rfg="0";
-	$scope.rfbn="Blue Channel";
-	$scope.rfb="0";
-	$scope.rfin="Intensity Channel";
-	$scope.rfi="0";
-	$scope.atohigh = 0;
-	$scope.atolow = 0;
-	$scope.pwmd = 0;
-	$scope.pwma = 0;
-	$scope.salinityenabled=false;
-	$scope.orpenabled=false;
-	$scope.pheenabled=false;
-	$scope.wlenabled=false;
-	$scope.multiwlenabled=false;
-	$scope.humenabled=false;
-	$scope.parenabled=false;
-	$scope.stardimmingenabled=false;
-	$scope.cvarenabled=false;
-	$scope.rfenabled=false;
-	$scope.dcpumpenabled=false;
-	$scope.dimmingexpansionenabled=false;
-	$scope.saln = "";
-	$scope.sal = "";
-	$scope.orpn = "";
-	$scope.orp = "";
-	$scope.phen = "";
-	$scope.phe = "";
-	$scope.wln = "";
-	$scope.wl1n = "";
-	$scope.wl2n = "";
-	$scope.wl3n = "";
-	$scope.wl4n = "";
-	$scope.wl = "";
-	$scope.wl1 = "";
-	$scope.wl2 = "";
-	$scope.wl3 = "";
-	$scope.wl4 = "";
-	$scope.humn = "";
-	$scope.hum = "";
-	$scope.parn = "";
-	$scope.par = "";
-	$scope.lbl_NoFlags = "No alert flags";
-	$scope.lbl_ATOTimeout = "";
-	$scope.ATOTimeout = "spacer"
-	$scope.lbl_Overheat = "";
-	$scope.Overheat = "spacer"
-	$scope.lbl_BusLock = "";
-	$scope.BusLock = "spacer"
-	$scope.leakn = "";
-	$scope.Leak = "spacer"
-	$scope.lbl_LightsOn = "";
-	$scope.LightsOn = "spacer"
-	$scope.mainenabled=false;
-	$scope.expansionenabled=false;
-	$scope.exp1enabled=false;
-	$scope.exp2enabled=false;
-	$scope.exp3enabled=false;
-	$scope.exp4enabled=false;
-	$scope.exp5enabled=false;
-	$scope.exp6enabled=false;
-	$scope.exp7enabled=false;
-	$scope.exp8enabled=false;
+	if (json.RA.RFWO<=100)
+	{
+		$scope.rfwclass = "dimmingoverridehighlight";
+		$scope.rfw = json.RA.RFWO;
+	}
+	else
+	{
+		$scope.rfwclass = "";
+		$scope.rfw = json.RA.RFW;
+	}
+	if (json.RA.RFRBO<=100)
+	{
+		$scope.rfrbclass = "dimmingoverridehighlight";
+		$scope.rfrb = json.RA.RFRBO;
+	}
+	else
+	{
+		$scope.rfrbclass = "";
+		$scope.rfrb = json.RA.RFRB;
+	}
+	if (json.RA.RFRO<=100) 
+	{
+		$scope.rfrclass = "dimmingoverridehighlight";
+		$scope.rfr = json.RA.RFRO;
+	}
+	else
+	{
+		$scope.rfrclass = "";
+		$scope.rfr = json.RA.RFR;
+	}
+	if (json.RA.RFGO<=100) 
+	{
+		$scope.rfgclass = "dimmingoverridehighlight";
+		$scope.rfg = json.RA.RFGO;
+	}
+	else
+	{
+		$scope.rfgclass = "";
+		$scope.rfg = json.RA.RFG;
+	}
+	if (json.RA.RFBO<=100) 
+	{
+		$scope.rfbclass = "dimmingoverridehighlight";
+		$scope.rfb = json.RA.RFBO;
+	}
+	else
+	{
+		$scope.rfbclass = "";
+		$scope.rfb = json.RA.RFB;
+	}
+	if (json.RA.RFIO<=100) 
+	{
+		$scope.rficlass = "dimmingoverridehighlight";
+		$scope.rfi = json.RA.RFIO;
+	}
+	else
+	{
+		$scope.rficlass = "";
+		$scope.rfi = json.RA.RFI;
+	}
+}
+
+function CheckRelay($scope)
+{
 	for (a=1;a<=8;a++)
 	{
-		$scope["r"+a+"on"]=false;
-		$scope["r"+a+"off"]=false;
-		$scope["r"+a+"auto"]=false;
-		$scope["r"+a+"onclass"]="relayblankclass";
-		$scope["r"+a+"offclass"]="relayblankclass";
-		$scope["r"+a+"autoclass"]="relayblankclass";
-		$scope["r"+a+"n"]="Relay " + a;
+		if ((json.RA.RON & (1<<(a-1))) == 0 && (json.RA.ROFF & (1<<(a-1))) == (1<<(a-1)))
+		{
+			$scope["r"+a+"on"]=false;
+			$scope["r"+a+"off"]=false;
+			$scope["r"+a+"auto"]=true;
+			if ((json.RA.R & (1<<(a-1))) == (1<<(a-1)))
+				$scope["r"+a+"autoclass"]="relaygreenclass";
+			else
+				$scope["r"+a+"autoclass"]="relayredclass";
+			$scope["r"+a+"onclass"]="relayblankclass";
+			$scope["r"+a+"offclass"]="relayblankclass";
+		}
+		if ((json.RA.RON & (1<<(a-1))) == (1<<(a-1)))
+		{
+			$scope["r"+a+"onclass"]="relaygreenclass";
+			$scope["r"+a+"offclass"]="relayblankclass";
+			$scope["r"+a+"autoclass"]="relayblankclass";
+			$scope["r"+a+"on"]=true;
+			$scope["r"+a+"off"]=false;
+			$scope["r"+a+"auto"]=false;
+		}
+		if ((json.RA.ROFF & (1<<(a-1))) == 0)
+		{
+			$scope["r"+a+"onclass"]="relayblankclass";
+			$scope["r"+a+"offclass"]="relayredclass";
+			$scope["r"+a+"autoclass"]="relayblankclass";
+			$scope["r"+a+"on"]=false;
+			$scope["r"+a+"off"]=true;
+			$scope["r"+a+"auto"]=false;
+		}
 		for (b=1;b<=8;b++)
 		{
-			$scope["r"+a+b+"on"]=false;
-			$scope["r"+a+b+"off"]=false;
-			$scope["r"+a+b+"auto"]=false;
-			$scope["r"+a+b+"onclass"]="relayblankclass";
-			$scope["r"+a+b+"offclass"]="relayblankclass";
-			$scope["r"+a+b+"autoclass"]="relayblankclass";
-			$scope["r"+a+b+"n"]="Relay " + a + b;
+			if ((json.RA["RON"+a] & (1<<(b-1))) == 0 && (json.RA["ROFF"+a] & (1<<(b-1))) == (1<<(b-1)))
+			{
+				$scope["r"+a+b+"on"]=false;
+				$scope["r"+a+b+"off"]=false;
+				$scope["r"+a+b+"auto"]=true;
+				if ((json.RA["R"+a] & (1<<(b-1))) == (1<<(b-1)))
+					$scope["r"+a+b+"autoclass"]="relaygreenclass";
+				else
+					$scope["r"+a+b+"autoclass"]="relayredclass";
+				$scope["r"+a+b+"onclass"]="relayblankclass";
+				$scope["r"+a+b+"offclass"]="relayblankclass";
+			}
+			if ((json.RA["RON"+a] & (1<<(b-1))) == (1<<(b-1)))
+			{
+				$scope["r"+a+b+"onclass"]="relaygreenclass";
+				$scope["r"+a+b+"offclass"]="relayblankclass";
+				$scope["r"+a+b+"autoclass"]="relayblankclass";
+				$scope["r"+a+b+"on"]=true;
+				$scope["r"+a+b+"off"]=false;
+				$scope["r"+a+b+"auto"]=false;
+			}
+			if ((json.RA["ROFF"+a] & (1<<(b-1))) == 0)
+			{
+				$scope["r"+a+b+"onclass"]="relayblankclass";
+				$scope["r"+a+b+"offclass"]="relayredclass";
+				$scope["r"+a+b+"autoclass"]="relayblankclass";
+				$scope["r"+a+b+"on"]=false;
+				$scope["r"+a+b+"off"]=true;
+				$scope["r"+a+b+"auto"]=false;
+			}
+		}			
+	}
+}
+
+function loaddefaultvalues()
+{
+	if (jsonlabels==null) jsonlabels=new Object();
+	if (jsonlabels.RA==null) jsonlabels.RA=new Object();
+	if (json==null) json=new Object();
+	if (json.RA==null) json.RA=new Object();
+	jsonlabels.RA.T1N = "Temp 1";
+	jsonlabels.RA.T2N = "Temp 2";
+	jsonlabels.RA.T3N = "Temp 3";
+	jsonlabels.RA.PHN = "pH";
+	jsonlabels.RA.ATOHIGHN = "ATO High";
+	jsonlabels.RA.ATOLOWN = "ATO Low";
+	jsonlabels.RA.PWMD1N = "Daylight Channel";
+	jsonlabels.RA.PWMA1N = "Actinic Channel";
+	jsonlabels.RA.ALARMN = "Alarm";
+	jsonlabels.RA.LEAKN = "Leak";
+	jsonlabels.RA.PWMD2N = "Daylight Channel 2";
+	jsonlabels.RA.PWMA2N = "Actinic Channel 2";
+	jsonlabels.RA.PWME0N = "Dimming Channel 0";
+	jsonlabels.RA.PWME1N = "Dimming Channel 1";
+	jsonlabels.RA.PWME2N = "Dimming Channel 2";
+	jsonlabels.RA.PWME3N = "Dimming Channel 3";
+	jsonlabels.RA.PWME4N = "Dimming Channel 4";
+	jsonlabels.RA.PWME5N = "Dimming Channel 5";
+	jsonlabels.RA.C0N = "Custom Var 0:";
+	jsonlabels.RA.C1N = "Custom Var 1:";
+	jsonlabels.RA.C2N = "Custom Var 2:";
+	jsonlabels.RA.C3N = "Custom Var 3:";
+	jsonlabels.RA.C4N = "Custom Var 4:";
+	jsonlabels.RA.C5N = "Custom Var 5:";
+	jsonlabels.RA.C6N = "Custom Var 6:";
+	jsonlabels.RA.C7N = "Custom Var 7:";
+	jsonlabels.RA.RFWN = "White Channel";
+	jsonlabels.RA.RFRBN = "Royal Blue Channel";
+	jsonlabels.RA.RFRN = "Red Channel";
+	jsonlabels.RA.RFGN = "Green Channel";
+	jsonlabels.RA.RFBN = "Blue Channel";
+	jsonlabels.RA.RFIN = "Intensity Channel";
+	jsonlabels.RA.SALN = "Salinity";
+	jsonlabels.RA.ORPN = "ORP";
+	jsonlabels.RA.PHEN = "pH Expansion";
+	jsonlabels.RA.WLN = "Water Level";
+	jsonlabels.RA.WL1N = "Water Level 1";
+	jsonlabels.RA.WL2N = "Water Level 2";
+	jsonlabels.RA.WL3N = "Water Level 3";
+	jsonlabels.RA.WL4N = "Water Level 4";
+	jsonlabels.RA.HUMN = "Humidity";
+	jsonlabels.RA.PARN = "PAR";
+	jsonlabels.RA.IO0N = "I/O Channel 0";
+	jsonlabels.RA.IO1N = "I/O Channel 1";
+	jsonlabels.RA.IO2N = "I/O Channel 2";
+	jsonlabels.RA.IO3N = "I/O Channel 3";
+	jsonlabels.RA.IO4N = "I/O Channel 4";
+	jsonlabels.RA.IO5N = "I/O Channel 5";
+	for (a=1;a<=8;a++)
+	{
+		jsonlabels.RA["R"+a+"N" ]= "Relay " + a;
+		for (b=1;b<=8;b++)
+		{
+			jsonlabels.RA["R"+a+b+"N"] = "Relay " + a + b;
 		}
 	}
+	json.RA.T1 = "0.0";
+	json.RA.T2 = "0.0";
+	json.RA.T3 = "0.0";
+	json.RA.PH = "0.00";
+	json.RA.ATOHIGH = "0";
+	json.RA.ATOLOW = "0";
+	json.RA.PWMD1 = "0";
+	json.RA.PWMA1 = "0";
+	json.RA.ALARM = "0";
+	json.RA.LEAK = "0";
+	json.RA.PWMD2 = "0";
+	json.RA.PWMA2 = "0";
+	json.RA.PWME0 = "0";
+	json.RA.PWME1 = "0";
+	json.RA.PWME2 = "0";
+	json.RA.PWME3 = "0";
+	json.RA.PWME4 = "0";
+	json.RA.PWME5 = "0";
+	json.RA.C0 = "0";
+	json.RA.C1 = "0";
+	json.RA.C2 = "0";
+	json.RA.C3 = "0";
+	json.RA.C4 = "0";
+	json.RA.C5 = "0";
+	json.RA.C6 = "0";
+	json.RA.C7 = "0";
+	json.RA.RFW = "0";
+	json.RA.RFRB = "0";
+	json.RA.RFR = "0";
+	json.RA.RFG = "0";
+	json.RA.RFB = "0";
+	json.RA.RFI = "0";
+	json.RA.SAL = "0.0";
+	json.RA.ORP = "0";
+	json.RA.PHE = "0.00";
+	json.RA.WL = "0";
+	json.RA.WL1 = "0";
+	json.RA.WL2 = "0";
+	json.RA.WL3 = "0";
+	json.RA.WL4 = "0";
+	json.RA.HUM = "0";
+	json.RA.PAR = "0";
+	json.RA.IO0 = "0";
+	json.RA.IO1 = "0";
+	json.RA.IO2 = "0";
+	json.RA.IO3 = "0";
+	json.RA.IO4 = "0";
+	json.RA.IO5 = "0";
 }
 
 function loadlabels($scope) {
 	if (jsonlabels!=null)
 	{
-		if (jsonlabels.RA.T1N=="null")
-			$scope.t1n = "Temp 1";
-		else
-			$scope.t1n=jsonlabels.RA.T1N;
-		if (jsonlabels.RA.T2N=="null")
-			$scope.t2n = "Temp 2";
-		else
-			$scope.t2n=jsonlabels.RA.T2N;
-		if (jsonlabels.RA.T3N=="null")
-			$scope.t3n = "Temp 3";
-		else
-			$scope.t3n=jsonlabels.RA.T3N;
-		if (jsonlabels.RA.PHN=="null")
-			$scope.phn = "pH";
-		else
-			$scope.phn=jsonlabels.RA.PHN;
-		if (jsonlabels.RA.SALN=="null")
-			$scope.saln = "Salinity";
-		else
-			$scope.saln=jsonlabels.RA.SALN;
-		if (jsonlabels.RA.ORPN=="null")
-			$scope.orpn = "ORP";
-		else
-			$scope.orpn=jsonlabels.RA.ORPN;
-		if (jsonlabels.RA.PHEN=="null")
-			$scope.phen = "pH Expansion";
-		else
-			$scope.phen=jsonlabels.RA.PHEN;
-		if (jsonlabels.RA.HUMN=="null")
-			$scope.humn = "Humidity";
-		else
-			$scope.humn=jsonlabels.RA.HUMN;
-		if (jsonlabels.RA.WLN=="null")
-			$scope.wln = "Water Level 0";
-		else
-			$scope.wln=jsonlabels.RA.WLN;
-		if (jsonlabels.RA.WL1N=="null")
-			$scope.wl1n = "Water Level 1";
-		else
-			$scope.wl1n=jsonlabels.RA.WL1N;
-		if (jsonlabels.RA.WL2N=="null")
-			$scope.wl2n = "Water Level 2";
-		else
-			$scope.wl2n=jsonlabels.RA.WL2N;
-		if (jsonlabels.RA.WL3N=="null")
-			$scope.wl3n = "Water Level 3";
-		else
-			$scope.wl3n=jsonlabels.RA.WL3N;
-		if (jsonlabels.RA.WL4N=="null")
-			$scope.wl4n = "Water Level 4";
-		else
-			$scope.wl4n=jsonlabels.RA.WL4N;
-
-		if (jsonlabels.RA.ATOHIGHN=="null")
-			$scope.atohighn = "ATO High";
-		else
-			$scope.atohighn=jsonlabels.RA.ATOHIGHN;
-		if (jsonlabels.RA.ATOLOWN=="null")
-			$scope.atolown = "ATO Low";
-		else
-			$scope.atolown=jsonlabels.RA.ATOLOWN;
-		if (jsonlabels.RA.PWMD1N=="null")
-			$scope.pwmd1n = "Daylight Channel";
-		else
-			$scope.pwmd1n=jsonlabels.RA.PWMD1N;
-		if (jsonlabels.RA.PWMA1N=="null")
-			$scope.pwma1n = "Actinic Channel";
-		else
-			$scope.pwma1n=jsonlabels.RA.PWMA1N;
-		if (jsonlabels.RA.ALARMN=="null")
-			$scope.alarmn = "Alarm";
-		else
-			$scope.alarmn=jsonlabels.RA.ALARMN;
-		if (jsonlabels.RA.LEAKN=="null")
-			$scope.leakn = "Leak";
-		else
-			$scope.leakn=jsonlabels.RA.LEAKN;
-		if (jsonlabels.RA.PWMD2N=="null")
-			$scope.pwmd2n = "Daylight Channel 2";
-		else
-			$scope.pwmd2n=jsonlabels.RA.PWMD2N;
-		if (jsonlabels.RA.PWMA2N=="null")
-			$scope.pwma2n = "Actinic Channel 2";
-		else
-			$scope.pwma2n=jsonlabels.RA.PWMA2N;
-		if (jsonlabels.RA.PWME0N=="null")
-			$scope.pwme0n = "Dimming Channel 0";
-		else
-			$scope.pwme0n=jsonlabels.RA.PWME0N;
-		if (jsonlabels.RA.PWME1N=="null")
-			$scope.pwme1n = "Dimming Channel 1";
-		else
-			$scope.pwme1n=jsonlabels.RA.PWME1N;
-		if (jsonlabels.RA.PWME2N=="null")
-			$scope.pwme2n = "Dimming Channel 2";
-		else
-			$scope.pwme2n=jsonlabels.RA.PWME2N;
-		if (jsonlabels.RA.PWME3N=="null")
-			$scope.pwme3n = "Dimming Channel 3";
-		else
-			$scope.pwme3n=jsonlabels.RA.PWME3N;
-		if (jsonlabels.RA.PWME4N=="null")
-			$scope.pwme4n = "Dimming Channel 4";
-		else
-			$scope.pwme4n=jsonlabels.RA.PWME4N;
-		if (jsonlabels.RA.PWME5N=="null")
-			$scope.pwme5n = "Dimming Channel 5";
-		else
-			$scope.pwme5n=jsonlabels.RA.PWME5N;
-		if (jsonlabels.RA.C0N=="null")
-			$scope.c0n = "Custom Var 0:";
-		else
-			$scope.c0n=jsonlabels.RA.C0N;
-		if (jsonlabels.RA.C1N=="null")
-			$scope.c1n = "Custom Var 1:";
-		else
-			$scope.c1n=jsonlabels.RA.C1N;
-		if (jsonlabels.RA.C2N=="null")
-			$scope.c2n = "Custom Var 2:";
-		else
-			$scope.c2n=jsonlabels.RA.C2N;
-		if (jsonlabels.RA.C3N=="null")
-			$scope.c3n = "Custom Var 3:";
-		else
-			$scope.c3n=jsonlabels.RA.C3N;
-		if (jsonlabels.RA.C4N=="null")
-			$scope.c4n = "Custom Var 4:";
-		else
-			$scope.c4n=jsonlabels.RA.C4N;
-		if (jsonlabels.RA.C5N=="null")
-			$scope.c5n = "Custom Var 5:";
-		else
-			$scope.c5n=jsonlabels.RA.C5N;
-		if (jsonlabels.RA.C6N=="null")
-			$scope.c6n = "Custom Var 6:";
-		else
-			$scope.c6n=jsonlabels.RA.C6N;
-		if (jsonlabels.RA.C7N=="null")
-			$scope.c7n = "Custom Var 7:";
-		else
-			$scope.c7n=jsonlabels.RA.C7N;
-		if (jsonlabels.RA.RFWN=="null")
-			$scope.rfwn = "White Channel:";
-		else
-			$scope.rfwn=jsonlabels.RA.RFWN;
-		if (jsonlabels.RA.RFRBN=="null")
-			$scope.rfrbn = "Royal Blue Channel:";
-		else
-			$scope.rfrbn=jsonlabels.RA.RFRBN;
-		if (jsonlabels.RA.RFRN=="null")
-			$scope.rfrn = "Red Channel:";
-		else
-			$scope.rfrn=jsonlabels.RA.RFRN;
-		if (jsonlabels.RA.RFGN=="null")
-			$scope.rfgn = "Green Channel:";
-		else
-			$scope.rfgn=jsonlabels.RA.RFGN;
-		if (jsonlabels.RA.RFBN=="null")
-			$scope.rfbn = "Blue Channel:";
-		else
-			$scope.rfbn=jsonlabels.RA.RFBN;
-		if (jsonlabels.RA.RFIN=="null")
-			$scope.rfin = "Intensity Channel:";
-		else
-			$scope.rfin=jsonlabels.RA.RFIN;
-		if (jsonlabels.RA.IO0N=="null")
-			$scope.io0n = "I/O Channel 0";
-		else
-			$scope.io0n=jsonlabels.RA.IO0N;
-		if (jsonlabels.RA.IO1N=="null")
-			$scope.io1n = "I/O Channel 1";
-		else
-			$scope.io1n=jsonlabels.RA.IO1N;
-		if (jsonlabels.RA.IO2N=="null")
-			$scope.io2n = "I/O Channel 2";
-		else
-			$scope.io2n=jsonlabels.RA.IO2N;
-		if (jsonlabels.RA.IO3N=="null")
-			$scope.io3n = "I/O Channel 3";
-		else
-			$scope.io3n=jsonlabels.RA.IO3N;
-		if (jsonlabels.RA.IO4N=="null")
-			$scope.io4n = "I/O Channel 4";
-		else
-			$scope.io4n=jsonlabels.RA.IO4N;
-		if (jsonlabels.RA.IO5N=="null")
-			$scope.io5n = "I/O Channel 5";
-		else
-			$scope.io5n=jsonlabels.RA.IO5N;
+		$scope.t1n=jsonlabels.RA.T1N;
+		$scope.t2n=jsonlabels.RA.T2N;
+		$scope.t3n=jsonlabels.RA.T3N;
+		$scope.phn=jsonlabels.RA.PHN;
+		$scope.saln=jsonlabels.RA.SALN;
+		$scope.orpn=jsonlabels.RA.ORPN;
+		$scope.phen=jsonlabels.RA.PHEN;
+		$scope.humn=jsonlabels.RA.HUMN;
+		$scope.parn=jsonlabels.RA.PARN;
+		$scope.wln=jsonlabels.RA.WLN;
+		$scope.wl1n=jsonlabels.RA.WL1N;
+		$scope.wl2n=jsonlabels.RA.WL2N;
+		$scope.wl3n=jsonlabels.RA.WL3N;
+		$scope.wl4n=jsonlabels.RA.WL4N;
+		$scope.atohighn=jsonlabels.RA.ATOHIGHN;
+		$scope.atolown=jsonlabels.RA.ATOLOWN;
+		$scope.pwmd1n=jsonlabels.RA.PWMD1N;
+		$scope.pwma1n=jsonlabels.RA.PWMA1N;
+		$scope.alarmn=jsonlabels.RA.ALARMN;
+		$scope.leakn=jsonlabels.RA.LEAKN;
+		$scope.pwmd2n=jsonlabels.RA.PWMD2N;
+		$scope.pwma2n=jsonlabels.RA.PWMA2N;
+		$scope.pwme0n=jsonlabels.RA.PWME0N;
+		$scope.pwme1n=jsonlabels.RA.PWME1N;
+		$scope.pwme2n=jsonlabels.RA.PWME2N;
+		$scope.pwme3n=jsonlabels.RA.PWME3N;
+		$scope.pwme4n=jsonlabels.RA.PWME4N;
+		$scope.pwme5n=jsonlabels.RA.PWME5N;
+		$scope.c0n=jsonlabels.RA.C0N;
+		$scope.c1n=jsonlabels.RA.C1N;
+		$scope.c2n=jsonlabels.RA.C2N;
+		$scope.c3n=jsonlabels.RA.C3N;
+		$scope.c4n=jsonlabels.RA.C4N;
+		$scope.c5n=jsonlabels.RA.C5N;
+		$scope.c6n=jsonlabels.RA.C6N;
+		$scope.c7n=jsonlabels.RA.C7N;
+		$scope.rfwn=jsonlabels.RA.RFWN;
+		$scope.rfrbn=jsonlabels.RA.RFRBN;
+		$scope.rfrn=jsonlabels.RA.RFRN;
+		$scope.rfgn=jsonlabels.RA.RFGN;
+		$scope.rfbn=jsonlabels.RA.RFBN;
+		$scope.rfin=jsonlabels.RA.RFIN;
+		$scope.io0n=jsonlabels.RA.IO0N;
+		$scope.io1n=jsonlabels.RA.IO1N;
+		$scope.io2n=jsonlabels.RA.IO2N;
+		$scope.io3n=jsonlabels.RA.IO3N;
+		$scope.io4n=jsonlabels.RA.IO4N;
+		$scope.io5n=jsonlabels.RA.IO5N;
 		for (a=1; a<=8; a++)
 		{
-			if (jsonlabels.RA["R"+a+"N"]=="null")
-				$scope["r"+a+"n"] = "Relay "+a;
-			else
-				$scope["r"+a+"n"]=jsonlabels.RA["R"+a+"N"];
+			$scope["r"+a+"n"]=jsonlabels.RA["R"+a+"N"];
 			for (b=1; b<=8; b++)
 			{
-				if (jsonlabels.RA["R"+a+b+"N"]=="null")
-					$scope["r"+a+b+"n"] = "Relay "+a+b;
-				else
-					$scope["r"+a+b+"n"]=jsonlabels.RA["R"+a+b+"N"];
+				$scope["r"+a+b+"n"]=jsonlabels.RA["R"+a+b+"N"];
 			}
 		}
 	}
@@ -1774,4 +1768,253 @@ function SaveMemory(s,l)
 {
 	MemString.push(s);
 	MemURL.push(l);
+}
+
+function MQTTconnect() {
+	console.log("Connecting...");
+	mqtt = new Paho.MQTT.Client(
+					"forum.reefangel.com",
+					9001,
+					"web_" + parseInt(Math.random() * 100,
+					10));
+	var options = {
+		timeout: 3,
+		useSSL: false,
+		cleanSession: true,
+		onSuccess: onConnect,
+		onFailure: function (message) {
+			console.log(message.errorMessage);
+			if (parametersscope.cloudenabled)
+			{
+				parametersscope.cloudstatus="Disconnected";
+				relayscope.cloudstatus="Disconnected";
+				json.RA.cloudstatus="Disconnected";
+				parametersscope.$apply();
+			}
+		}
+	};
+
+	mqtt.onConnectionLost = onConnectionLost;
+	mqtt.onMessageArrived = onMessageArrived;
+
+	options.userName = cloudusername;
+	options.password = cloudpassword;
+	mqtt.connect(options);
+}
+
+function MQTTdisconnect() {
+	console.log("Disconnected");
+	if (parametersscope.cloudenabled)
+	{
+		parametersscope.cloudstatus="Disconnected";
+		relayscope.cloudstatus="Disconnected";
+		json.RA.cloudstatus="Disconnected";
+		parametersscope.$apply();
+	}
+	if (mqtt!=null)	mqtt.disconnect();
+	mqtt=null;
+}
+
+function onConnect() {
+	parametersscope.cloudstatus="Connected";
+	relayscope.cloudstatus="Connected";
+	json.RA.cloudstatus="Connected";
+	parametersscope.$apply();
+	mqtt.subscribe(cloudusername + "/out");
+	message = new Paho.MQTT.Message("all:0");
+	message.destinationName = cloudusername + "/in";
+	mqtt.send(message);
+}
+
+function onConnectionLost(response) {
+	console.log("Connection Lost");
+	if (parametersscope.cloudenabled)
+	{
+		parametersscope.cloudstatus="Disconnected";
+		relayscope.cloudstatus="Disconnected";
+		json.RA.cloudstatus="Disconnected";
+		parametersscope.$apply();
+	}
+};
+
+function onMessageArrived(message) {
+
+	var topic = message.destinationName;
+	var payload = message.payloadString;
+	console.log(message.payloadString);
+	json.RA.lastrefresh=new Date().toLocaleString();
+	json.RA.ID=cloudusername;
+	parametersscope.lastupdated=json.RA.lastrefresh;
+	relayscope.lastupdated=json.RA.lastrefresh;
+	parametersscope.forumid=json.RA.ID;
+	if (message.payloadString.indexOf("R1:")!=-1 || message.payloadString.indexOf("R2:")!=-1 || message.payloadString.indexOf("R3:")!=-1 || message.payloadString.indexOf("R4:")!=-1 || message.payloadString.indexOf("R5:")!=-1 || message.payloadString.indexOf("R6:")!=-1 || message.payloadString.indexOf("R7:")!=-1 || message.payloadString.indexOf("R8:")!=-1 || message.payloadString.indexOf("ROFF")!=-1 ||  message.payloadString.indexOf("RON")!=-1)
+	{
+		UpdateCloudParam(message,"R1:","r1",1,0);
+		UpdateCloudParam(message,"ROFF1:","roff1",1,0);
+		UpdateCloudParam(message,"RON1:","ron1",1,0);
+		UpdateCloudParam(message,"R2:","r2",1,0);
+		UpdateCloudParam(message,"ROFF2:","roff2",1,0);
+		UpdateCloudParam(message,"RON2:","ron2",1,0);
+		UpdateCloudParam(message,"R3:","r3",1,0);
+		UpdateCloudParam(message,"ROFF3:","roff3",1,0);
+		UpdateCloudParam(message,"RON3:","ron3",1,0);
+		UpdateCloudParam(message,"R4:","r4",1,0);
+		UpdateCloudParam(message,"ROFF4:","roff4",1,0);
+		UpdateCloudParam(message,"RON4:","ron4",1,0);
+		UpdateCloudParam(message,"R5:","r5",1,0);
+		UpdateCloudParam(message,"ROFF5:","roff5",1,0);
+		UpdateCloudParam(message,"RON5:","ron5",1,0);
+		UpdateCloudParam(message,"R6:","r6",1,0);
+		UpdateCloudParam(message,"ROFF6:","roff6",1,0);
+		UpdateCloudParam(message,"RON6:","ron6",1,0);
+		UpdateCloudParam(message,"R7:","r7",1,0);
+		UpdateCloudParam(message,"ROFF7:","roff7",1,0);
+		UpdateCloudParam(message,"RON7:","ron7",1,0);
+		UpdateCloudParam(message,"R8:","r8",1,0);
+		UpdateCloudParam(message,"ROFF8:","roff8",1,0);
+		UpdateCloudParam(message,"RON8:","ron8",1,0);
+		CheckRelay(relayscope);
+	}
+	UpdateCloudParam(message,"ATOLOW:","atolow",1,0);
+	UpdateCloudParam(message,"ATOHIGH:","atohigh",1,0);
+	UpdateCloudParam(message,"ALARM:","alarm",1,0);
+	if (message.payloadString.indexOf("EM:")!=-1 && message.payloadString.indexOf("REM:")==-1)
+	{
+		UpdateCloudParam(message,"EM:","em",1,0);
+		CheckExpansion(parametersscope);
+	}
+	if (message.payloadString.indexOf("EM1:")!=-1)
+	{
+		UpdateCloudParam(message,"EM1:","em1",1,0);
+		CheckExpansion(parametersscope);
+	}
+	UpdateCloudParam(message,"REM:","rem",1,0);
+	UpdateCloudParam(message,"BID:","bid",1,0);
+	if (message.payloadString.indexOf("AF:")!=-1)
+	{
+		UpdateCloudParam(message,"AF:","af",1,0);
+		CheckFlags(parametersscope);
+	}
+	if (message.payloadString.indexOf("SF:")!=-1)
+	{
+		UpdateCloudParam(message,"SF:","sf",1,0);
+		CheckFlags(parametersscope);
+	}
+	UpdateCloudParam(message,"PWMD:","pwmd",1,0);
+	UpdateCloudParam(message,"PWMA:","pwma",1,0);
+	UpdateCloudParam(message,"PWMD2:","pwmd2",1,0);
+	UpdateCloudParam(message,"PWMA2:","pwma2",1,0);
+	UpdateCloudParam(message,"WL:","wl",1,0);
+	UpdateCloudParam(message,"WL1:","wl1",1,0);
+	UpdateCloudParam(message,"WL2:","wl2",1,0);
+	UpdateCloudParam(message,"WL3:","wl3",1,0);
+	UpdateCloudParam(message,"WL4:","wl4",1,0);
+	UpdateCloudParam(message,"HUM:","hum",1,1);
+	UpdateCloudParam(message,"DCT:","dct",1,0);
+	if (message.payloadString.indexOf("DCM:")!=-1 || message.payloadString.indexOf("DCS:")!=-1 || message.payloadString.indexOf("DCD:")!=-1)
+	{
+		UpdateCloudParam(message,"DCM:","dcm",1,0);
+		UpdateCloudParam(message,"DCS:","dcs",1,0);
+		UpdateCloudParam(message,"DCD:","dcd",1,0);
+		parametersscope.dcm = rfmodes[json.RA.DCM];
+		parametersscope.dcmodecolor = rfmodecolors[json.RA.DCM];
+		parametersscope.dcimage = rfimages[json.RA.RFM];
+	}
+	UpdateCloudParam(message,"PWME0:","pwme0",1,0);
+	UpdateCloudParam(message,"PWME1:","pwme1",1,0);
+	UpdateCloudParam(message,"PWME2:","pwme2",1,0);
+	UpdateCloudParam(message,"PWME3:","pwme3",1,0);
+	UpdateCloudParam(message,"PWME4:","pwme4",1,0);
+	UpdateCloudParam(message,"PWME5:","pwme5",1,0);
+	if (message.payloadString.indexOf("PWMDO:")!=-1 || message.payloadString.indexOf("PWMAO:")!=-1 || message.payloadString.indexOf("PWMD2O:")!=-1 || message.payloadString.indexOf("PWMA2O:")!=-1 || message.payloadString.indexOf("PWME0O:")!=-1 || message.payloadString.indexOf("PWME1O:")!=-1 || message.payloadString.indexOf("PWME2O:")!=-1 || message.payloadString.indexOf("PWME3O:")!=-1 || message.payloadString.indexOf("PWME4O:")!=-1 || message.payloadString.indexOf("PWME5O:")!=-1)
+	{
+		UpdateCloudParam(message,"PWMDO:","pwmdo",1,0);
+		UpdateCloudParam(message,"PWMAO:","pwmao",1,0);
+		UpdateCloudParam(message,"PWMD2O:","pwmd2o",1,0);
+		UpdateCloudParam(message,"PWMA2O:","pwma2o",1,0);
+		UpdateCloudParam(message,"PWME0O:","pwme0o",1,0);
+		UpdateCloudParam(message,"PWME1O:","pwme1o",1,0);
+		UpdateCloudParam(message,"PWME2O:","pwme2o",1,0);
+		UpdateCloudParam(message,"PWME3O:","pwme3o",1,0);
+		UpdateCloudParam(message,"PWME4O:","pwme4o",1,0);
+		UpdateCloudParam(message,"PWME5O:","pwme5o",1,0);
+		CheckDimmingOverride(parametersscope);
+	}
+	UpdateCloudParam(message,"AIW:","aiw",1,0);
+	UpdateCloudParam(message,"AIB:","aib",1,0);
+	UpdateCloudParam(message,"AIRB:","airb",1,0);
+	if (message.payloadString.indexOf("RFM:")!=-1 || message.payloadString.indexOf("RFS:")!=-1 || message.payloadString.indexOf("RFD:")!=-1)
+	{
+		UpdateCloudParam(message,"RFM:","rfm",1,0);
+		UpdateCloudParam(message,"RFS:","rfs",1,0);
+		UpdateCloudParam(message,"RFD:","rfd",1,0);
+		parametersscope.rfm = rfmodes[json.RA.RFM];
+		parametersscope.rfmodecolor = rfmodecolors[json.RA.RFM];
+		parametersscope.rfimage = rfimages[json.RA.RFM];
+	}
+	UpdateCloudParam(message,"RFW:","rfw",1,0);
+	UpdateCloudParam(message,"RFRB:","rfrb",1,0);
+	UpdateCloudParam(message,"RFR:","rfr",1,0);
+	UpdateCloudParam(message,"RFG:","rfg",1,0);
+	UpdateCloudParam(message,"RFB:","rfb",1,0);
+	UpdateCloudParam(message,"RFI:","rfi",1,0);
+	if (message.payloadString.indexOf("RFWO:")!=-1 || message.payloadString.indexOf("RFRBO:")!=-1 || message.payloadString.indexOf("RFRO:")!=-1 || message.payloadString.indexOf("RFGO:")!=-1 || message.payloadString.indexOf("RFBO:")!=-1 || message.payloadString.indexOf("RFIO:")!=-1) 
+	{
+		UpdateCloudParam(message,"RFWO:","rfwo",1,0);
+		UpdateCloudParam(message,"RFRBO:","rfrbo",1,0);
+		UpdateCloudParam(message,"RFRO:","rfro",1,0);
+		UpdateCloudParam(message,"RFGO:","rfgo",1,0);
+		UpdateCloudParam(message,"RFBO:","rfbo",1,0);
+		UpdateCloudParam(message,"RFIO:","rfio",1,0);
+		CheckRadionOverride(parametersscope);
+	}
+	if (message.payloadString.indexOf("IO:")!=-1)
+	{
+		UpdateCloudParam(message,"IO:","io",1,0);
+		CheckIO(parametersscope);
+	}
+	UpdateCloudParam(message,"LEAK:","leak",1,0);
+	if (message.payloadString.indexOf("C0:")!=-1 || message.payloadString.indexOf("C1:")!=-1 || message.payloadString.indexOf("C2:")!=-1 || message.payloadString.indexOf("C3:")!=-1 || message.payloadString.indexOf("C4:")!=-1 || message.payloadString.indexOf("C5:")!=-1 || message.payloadString.indexOf("C6:")!=-1 || message.payloadString.indexOf("C7:")!=-1)
+	{
+		UpdateCloudParam(message,"C0:","c0",1,0);
+		UpdateCloudParam(message,"C1:","c1",1,0);
+		UpdateCloudParam(message,"C2:","c2",1,0);
+		UpdateCloudParam(message,"C3:","c3",1,0);
+		UpdateCloudParam(message,"C4:","c4",1,0);
+		UpdateCloudParam(message,"C5:","c5",1,0);
+		UpdateCloudParam(message,"C6:","c6",1,0);
+		UpdateCloudParam(message,"C7:","c7",1,0);
+		CheckCvar(parametersscope);
+	}
+	UpdateCloudParam(message,"T1:","t1",10,1);
+	UpdateCloudParam(message,"T2:","t2",10,1);
+	UpdateCloudParam(message,"T3:","t3",10,1);
+	UpdateCloudParam(message,"PH:","ph",100,2);
+	UpdateCloudParam(message,"ORP:","orp",1,0);
+	UpdateCloudParam(message,"SAL:","sal",10,1);
+	UpdateCloudParam(message,"PHE:","phe",100,2);
+	UpdateCloudParam(message,"PAR:","par",1,0);
+	UpdateCloudParam(message,"CEXP0:","cexp0",1,0);
+	UpdateCloudParam(message,"CEXP1:","cexp1",1,0);
+	UpdateCloudParam(message,"CEXP2:","cexp2",1,0);
+	UpdateCloudParam(message,"CEXP3:","cexp3",1,0);
+	UpdateCloudParam(message,"CEXP4:","cexp4",1,0);
+	UpdateCloudParam(message,"CEXP5:","cexp5",1,0);
+	UpdateCloudParam(message,"CEXP6:","cexp6",1,0);
+	UpdateCloudParam(message,"CEXP7:","cexp7",1,0);
+	
+	currentstorage.json=json;
+	currentstorage.jsonarray[currentstorage.activecontrollerid]=json;
+	parametersscope.$apply();
+	relayscope.$apply();
+};
+
+function UpdateCloudParam(message,id, element, division, decimal)
+{
+	if (message.payloadString.indexOf(id)!=-1)
+	{
+		parametersscope[element]=(message.payloadString.replace(id,"")/division).toFixed(decimal);
+		//if (json.RA[id.replace(":","")]==null) json.RA.push(id.replace(":",""),0);
+		json.RA[id.replace(":","")]=message.payloadString.replace(id,"");
+	}
 }

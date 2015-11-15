@@ -332,6 +332,25 @@ background-color: #fafafa;
 	height:110%;
 	margin-top: -200px;
 }
+.addcontrollerheader
+{
+	font-weight:bold;
+	font-size:1.2em;
+}
+.addcontrollerdescription
+{
+	font-size: .9em;
+}
+
+.relayheader
+{
+	font-size:1.2em;
+	font-weight:bold;
+	color:#990000;
+	margin-top: 15px;
+	margin-bottom: 5px;
+	text-align:center;
+}
 
 @media only screen and (max-width: 480px), only screen and (max-device-width: 480px) {
 h4{
@@ -467,4 +486,14 @@ ons-list-item {
 {
     width: 55%;
 }
-    
+
+.addcontrollerheader
+{
+	font-weight:bold;
+	font-size:.8em;
+}
+
+.addcontrollerdescription
+{
+	font-size: .6em;
+}

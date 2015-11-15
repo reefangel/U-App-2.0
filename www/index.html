@@ -11,6 +11,7 @@
 <script src="js/jquery-1.9.1.min.js"></script>
 <script src="js/highstock.js"></script>
 <script src="js/angular-animate.min.js"></script>
+<script src="js/mqttws31-min.js" type="text/javascript"></script>
 <script src="js/uapp.js"></script>
 <body>
 <ons-modal var="modal">
@@ -32,6 +33,7 @@
 </ons-navigator>
 <ons-template id="menu.html">
   <ons-list>
+    <ons-list-item>Reef Angel Uapp 2.0.2</ons-list-item>
     <ons-list-item modifier="tapable" onclick="menu.toggleMenu()">Close<span class="list-item-action">
       <ons-icon icon="ion-close-circled" size="22px"></ons-icon>
       </span></ons-list-item>
@@ -87,9 +89,11 @@
     <h4 style="color: #999; text-align: center;"> <img src="images/logo.png"><br>
       <b>Status</b></h4>
     <div ng-controller="Parameters">
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedlabel">Forum username:</div>
       <div class="lastupdatedvalue">{{forumid}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;">
@@ -189,9 +193,11 @@
     <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
       <b>Status</b> </h4>
     <div ng-controller="Parameters">
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedlabel">Forum username:</div>
       <div class="lastupdatedvalue">{{forumid}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
@@ -228,17 +234,17 @@
         </div>
       </center>
       </br>
-      <div class="flagslabel">{{lbl_NoFlags}}</div>
-      <div class="flagslabel">{{lbl_ATOTimeout}}</div>
-      <div class="iovalue"><img src="images/{{ATOTimeout}}.png"></div>
-      <div class="flagslabel">{{lbl_Overheat}}</div>
-      <div class="iovalue"><img src="images/{{Overheat}}.png"></div>
-      <div class="flagslabel">{{lbl_BusLock}}</div>
-      <div class="iovalue"><img src="images/{{BusLock}}.png"></div>
-      <div class="flagslabel">{{leakn}}</div>
-      <div class="iovalue"><img src="images/{{Leak}}.png"></div>
-      <div class="flagslabel">{{lbl_LightsOn}}</div>
-      <div class="iovalue"><img src="images/{{LightsOn}}.png"></div>
+      <div class="flagslabel" ng-if="alertnoflag">No alert flags</div>
+      <div class="flagslabel" ng-if="alertato">ATO Timeout</div>
+      <div class="iovalue" ng-if="alertato"><img src="images/clock.png"></div>
+      <div class="flagslabel" ng-if="alertoverheat">Overheat</div>
+      <div class="iovalue" ng-if="alertoverheat"><img src="images/overheat.png"></div>
+      <div class="flagslabel" ng-if="alertbuslock">Bus Lock</div>
+      <div class="iovalue" ng-if="alertbuslock"><img src="images/buserror.png"></div>
+      <div class="flagslabel" ng-if="alertleak">Water Leak</div>
+      <div class="iovalue" ng-if="alertleak"><img src="images/leak.png"></div>
+      <div class="flagslabel" ng-if="alertlightson">Lights On</div>
+      <div class="iovalue" ng-if="alertlightson"><img src="images/lights.png"></div>
     </div>
     </div>
   </ons-page>
@@ -248,9 +254,11 @@
     <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
       <b>Status</b> </h4>
     <div ng-controller="Parameters">
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedlabel">Forum username:</div>
       <div class="lastupdatedvalue">{{forumid}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
@@ -297,18 +305,20 @@
         <div class="iolabel">{{leakn}}</div>
         <div class="iovalue"><img src="images/{{leak}}.png"></div>
       </div>
-      <div class="iolabel">{{io0n}}</div>
-      <div class="iovalue"><img src="images/{{io0}}.png"></div>
-      <div class="iolabel">{{io1n}}</div>
-      <div class="iovalue"><img src="images/{{io1}}.png"></div>
-      <div class="iolabel">{{io2n}}</div>
-      <div class="iovalue"><img src="images/{{io2}}.png"></div>
-      <div class="iolabel">{{io3n}}</div>
-      <div class="iovalue"><img src="images/{{io3}}.png"></div>
-      <div class="iolabel">{{io4n}}</div>
-      <div class="iovalue"><img src="images/{{io4}}.png"></div>
-      <div class="iolabel">{{io5n}}</div>
-      <div class="iovalue"><img src="images/{{io5}}.png"></div>
+      <div ng-if="ioenabled">
+          <div class="iolabel">{{io0n}}</div>
+          <div class="iovalue"><img src="images/{{io0}}.png"></div>
+          <div class="iolabel">{{io1n}}</div>
+          <div class="iovalue"><img src="images/{{io1}}.png"></div>
+          <div class="iolabel">{{io2n}}</div>
+          <div class="iovalue"><img src="images/{{io2}}.png"></div>
+          <div class="iolabel">{{io3n}}</div>
+          <div class="iovalue"><img src="images/{{io3}}.png"></div>
+          <div class="iolabel">{{io4n}}</div>
+          <div class="iovalue"><img src="images/{{io4}}.png"></div>
+          <div class="iolabel">{{io5n}}</div>
+          <div class="iovalue"><img src="images/{{io5}}.png"></div>
+      </div>
       </br>
     </div>
     </div>
@@ -319,9 +329,11 @@
     <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
       <b>Status</b> </h4>
     <div ng-controller="Parameters">
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedlabel">Forum username:</div>
       <div class="lastupdatedvalue">{{forumid}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
@@ -361,55 +373,55 @@
       <div class="dimminglabel" ng-class="pwmdclass">{{pwmd1n}}</div>
       <div class="dimmingvalue" ng-class="pwmdclass">{{pwmd}}%</div>
       <div class="dimmingslider" ng-click="dimmingoverride(0);">
-        <input type="range" class="range daylightslider" min="0" max="100" value="{{pwmd}}" disabled>
+        <input type="range" class="range daylightslider" min="0" max="100" ng-model="pwmd" disabled>
       </div>
       <div class="dimminglabel" ng-class="pwmaclass">{{pwma1n}}</div>
       <div class="dimmingvalue" ng-class="pwmaclass">{{pwma}}%</div>
       <div class="dimmingslider" ng-click="dimmingoverride(1);">
-        <input type="range" class="range actinicslider" min="0" max="100" value="{{pwma}}" disabled>
+        <input type="range" class="range actinicslider" min="0" max="100" ng-model="pwma" disabled>
       </div>
       <div ng-if="stardimmingenabled">
         <div class="dimminglabel" ng-class="pwmd2class">{{pwmd2n}}</div>
         <div class="dimmingvalue" ng-class="pwmd2class">{{pwmd2}}%</div>
         <div class="dimmingslider" ng-click="dimmingoverride(2);">
-          <input type="range" class="range daylightslider" min="0" max="100" value="{{pwmd2}}" disabled>
+          <input type="range" class="range daylightslider" min="0" max="100" ng-model="pwmd2" disabled>
         </div>
         <div class="dimminglabel" ng-class="pwma2class">{{pwma2n}}</div>
         <div class="dimmingvalue" ng-class="pwma2class">{{pwma2}}%</div>
         <div class="dimmingslider" ng-click="dimmingoverride(3);">
-          <input type="range" class="range actinicslider" min="0" max="100" value="{{pwma2}}" disabled>
+          <input type="range" class="range actinicslider" min="0" max="100" ng-model="pwma2" disabled>
         </div>
       </div>
       <div id="dimmingexpansion" ng-if="dimmingexpansionenabled">
         <div class="dimminglabel" ng-class="pwme0class">{{pwme0n}}</div>
         <div class="dimmingvalue" ng-class="pwme0class">{{pwme0}}%</div>
         <div class="dimmingslider" ng-click="dimmingoverride(4);">
-          <input type="range" class="range pwmeslider" min="0" max="100" value="{{pwme0}}" disabled>
+          <input type="range" class="range pwmeslider" min="0" max="100" ng-model="pwme0" disabled>
         </div>
         <div class="dimminglabel" ng-class="pwme1class">{{pwme1n}}</div>
         <div class="dimmingvalue" ng-class="pwme1class">{{pwme1}}%</div>
         <div class="dimmingslider" ng-click="dimmingoverride(5);">
-          <input type="range" class="range pwmeslider" min="0" max="100" value="{{pwme1}}" disabled>
+          <input type="range" class="range pwmeslider" min="0" max="100" ng-model="pwme1" disabled>
         </div>
         <div class="dimminglabel" ng-class="pwme2class">{{pwme2n}}</div>
         <div class="dimmingvalue" ng-class="pwme2class">{{pwme2}}%</div>
         <div class="dimmingslider" ng-click="dimmingoverride(6);">
-          <input type="range" class="range pwmeslider" min="0" max="100" value="{{pwme2}}" disabled>
+          <input type="range" class="range pwmeslider" min="0" max="100" ng-model="pwme2" disabled>
         </div>
         <div class="dimminglabel" ng-class="pwme3class">{{pwme3n}}</div>
         <div class="dimmingvalue" ng-class="pwme3class">{{pwme3}}%</div>
         <div class="dimmingslider" ng-click="dimmingoverride(7);">
-          <input type="range" class="range pwmeslider" min="0" max="100" value="{{pwme3}}" disabled>
+          <input type="range" class="range pwmeslider" min="0" max="100" ng-model="pwme3" disabled>
         </div>
         <div class="dimminglabel" ng-class="pwme4class">{{pwme4n}}</div>
         <div class="dimmingvalue" ng-class="pwme4class">{{pwme4}}%</div>
         <div class="dimmingslider" ng-click="dimmingoverride(8);">
-          <input type="range" class="range pwmeslider" min="0" max="100" value="{{pwme4}}" disabled>
+          <input type="range" class="range pwmeslider" min="0" max="100" ng-model="pwme4" disabled>
         </div>
         <div class="dimminglabel" ng-class="pwme5class">{{pwme5n}}</div>
         <div class="dimmingvalue" ng-class="pwme5class">{{pwme5}}%</div>
         <div class="dimmingslider" ng-click="dimmingoverride(9);">
-          <input type="range" class="range pwmeslider" min="0" max="100" value="{{pwme5}}" disabled>
+          <input type="range" class="range pwmeslider" min="0" max="100" ng-model="pwme5" disabled>
         </div>
       </div>
       </br>
@@ -422,9 +434,11 @@
     <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
       <b>Status</b> </h4>
     <div ng-controller="Parameters">
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedlabel">Forum username:</div>
       <div class="lastupdatedvalue">{{forumid}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
@@ -486,9 +500,11 @@
     <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
       <b>Status</b> </h4>
     <div ng-controller="Parameters">
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedlabel">Forum username:</div>
       <div class="lastupdatedvalue">{{forumid}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
@@ -536,32 +552,32 @@
       <div class="dimminglabel" ng-class="rfwclass">{{rfwn}}</div>
       <div class="dimmingvalue" ng-class="rfwclass">{{rfw}}%</div>
       <div class="dimmingslider" ng-click="dimmingoverride(13);">
-        <input type="range" class="range daylightslider" min="0" max="100" value="{{rfw}}" disabled>
+        <input type="range" class="range daylightslider" min="0" max="100" ng-model="rfw" disabled>
       </div>
       <div class="dimminglabel" ng-class="rfrbclass">{{rfrbn}}</div>
       <div class="dimmingvalue" ng-class="rfrbclass">{{rfrb}}%</div>
       <div class="dimmingslider" ng-click="dimmingoverride(14);">
-        <input type="range" class="range actinicslider" min="0" max="100" value="{{rfrb}}" disabled>
+        <input type="range" class="range actinicslider" min="0" max="100" ng-model="rfrb" disabled>
       </div>
       <div class="dimminglabel" ng-class="rfrclass">{{rfrn}}</div>
       <div class="dimmingvalue" ng-class="rfrclass">{{rfr}}%</div>
       <div class="dimmingslider" ng-click="dimmingoverride(15);">
-        <input type="range" class="range redslider" min="0" max="100" value="{{rfr}}" disabled>
+        <input type="range" class="range redslider" min="0" max="100" ng-model="rfr" disabled>
       </div>
       <div class="dimminglabel" ng-class="rfgclass">{{rfgn}}</div>
       <div class="dimmingvalue" ng-class="rfgclass">{{rfg}}%</div>
       <div class="dimmingslider" ng-click="dimmingoverride(16);">
-        <input type="range" class="range pwmeslider" min="0" max="100" value="{{rfg}}" disabled>
+        <input type="range" class="range pwmeslider" min="0" max="100" ng-model="rfg" disabled>
       </div>
       <div class="dimminglabel" ng-class="rfbclass">{{rfbn}}</div>
       <div class="dimmingvalue" ng-class="rfbclass">{{rfb}}%</div>
       <div class="dimmingslider" ng-click="dimmingoverride(17);">
-        <input type="range" class="range blueslider" min="0" max="100" value="{{rfb}}" disabled>
+        <input type="range" class="range blueslider" min="0" max="100" ng-model="rfb" disabled>
       </div>
       <div class="dimminglabel" ng-class="rficlass">{{rfin}}</div>
       <div class="dimmingvalue" ng-class="rficlass">{{rfi}}%</div>
       <div class="dimmingslider" ng-click="dimmingoverride(18);">
-        <input type="range" class="range intensityslider" min="0" max="100" value="{{rfi}}" disabled>
+        <input type="range" class="range intensityslider" min="0" max="100" ng-model="rfi" disabled>
       </div>
       </br>
     </div>
@@ -573,9 +589,11 @@
     <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
       <b>Status</b> </h4>
     <div ng-controller="Parameters">
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedlabel">Forum username:</div>
       <div class="lastupdatedvalue">{{forumid}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
@@ -628,9 +646,11 @@
     <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
       <b>Status</b> </h4>
     <div ng-controller="Parameters">
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedlabel">Forum username:</div>
       <div class="lastupdatedvalue">{{forumid}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
@@ -693,9 +713,11 @@
     <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
       <b>Status</b> </h4>
     <div ng-controller="Parameters">
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedlabel">Forum username:</div>
       <div class="lastupdatedvalue">{{forumid}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
@@ -754,9 +776,11 @@
     <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
       <b>Status</b> </h4>
     <div ng-controller="Parameters">
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedlabel">Forum username:</div>
       <div class="lastupdatedvalue">{{forumid}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
@@ -814,9 +838,11 @@
     <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
       <b>Status</b> </h4>
     <div ng-controller="Parameters">
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedlabel">Forum username:</div>
       <div class="lastupdatedvalue">{{forumid}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
@@ -874,9 +900,11 @@
     <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
       <b>Status</b> </h4>
     <div ng-controller="Parameters">
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedlabel">Forum username:</div>
       <div class="lastupdatedvalue">{{forumid}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
@@ -935,9 +963,11 @@
     <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
       <b>Status</b> </h4>
     <div ng-controller="Parameters">
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedlabel">Forum username:</div>
       <div class="lastupdatedvalue">{{forumid}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
@@ -996,11 +1026,14 @@
     <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
       <b>Relay</b> </h4>
     <div ng-controller="Relay">
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">{{lbl_forumid}}</div>
+      <div class="lastupdatedlabel">Forum username:</div>
       <div class="lastupdatedvalue">{{forumid}}</div>
       <div ng-if="mainenabled" ng-repeat="n in [1,2,3,4,5,6,7,8]">
+        <div class="relayheader">Main Box</div>
         <div class="relaylabel"><span ng-bind="r{{n}}n"></span></div>
         <div class="cvarvalue">
           <div class="button-bar relaybuttons">
@@ -1020,6 +1053,7 @@
         </div>
       </div>
       <div ng-show="expansionenabled" ng-repeat="n in [1,2,3,4,5,6,7,8]">
+        <div class="relayheader" ng-show="exp{{n}}enabled">Expansion Box {{n}}</div>
         <div ng-show="exp{{n}}enabled" ng-repeat="m in [1,2,3,4,5,6,7,8]">
           <div class="relaylabel"><span ng-bind="r{{n}}{{m}}n"></span></div>
           <div class="cvarvalue">
@@ -1437,6 +1471,7 @@
           </div>
         </div>
         <div class="controllerlist" style="text-align:left">
+          <p><span class="addcontrollerheader">Controller Settings</span><br><span class="addcontrollerdescription">Please enter a name for your controller and its ip address and port.</p>
           <p class="controllerlistitem">Name:<br>
             <input type="text" class="text-input"ng-model="controllername">
           </p>
@@ -1445,6 +1480,13 @@
           </p>
           <p class="controllerlistitem">Port:<br>
             <input type="text" class="text-input" ng-model="controllerport">
+          </p>
+          <p><span class="addcontrollerheader">Cloud Server Settings</span><br><span class="addcontrollerdescription">Please enter your forum username and password to use the Cloud Server. (Reef Angel Star Board is required)</p>
+          <p class="controllerlistitem">Username:<br>
+            <input type="text" class="text-input" ng-model="cloudusername">
+          </p>
+          <p class="controllerlistitem">Password:<br>
+            <input type="text" class="text-input" ng-model="cloudpassword">
           </p>
         </div>
         <div class="controllerlist">
