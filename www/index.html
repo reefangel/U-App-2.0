@@ -1032,8 +1032,8 @@
       <div class="lastupdatedvalue">{{lastupdated}}</div>
       <div class="lastupdatedlabel">Forum username:</div>
       <div class="lastupdatedvalue">{{forumid}}</div>
+      <div class="relayheader" ng-if="mainenabled">Main Box</div>
       <div ng-if="mainenabled" ng-repeat="n in [1,2,3,4,5,6,7,8]">
-        <div class="relayheader">Main Box</div>
         <div class="relaylabel"><span ng-bind="r{{n}}n"></span></div>
         <div class="cvarvalue">
           <div class="button-bar relaybuttons">

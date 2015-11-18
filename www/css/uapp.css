@@ -497,3 +497,13 @@ ons-list-item {
 {
 	font-size: .6em;
 }
+
+.relayheader
+{
+	font-size: .8em;
+	font-weight:bold;
+	color:#990000;
+	margin-top: 15px;
+	margin-bottom: 5px;
+	text-align:center;
+}

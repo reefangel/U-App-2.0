@@ -113,27 +113,27 @@
     [[NSNotificationCenter defaultCenter] postNotificationName:CDVLocalNotification object:notification];
 }
 
-#ifndef DISABLE_PUSH_NOTIFICATIONS
-
-    - (void)                                 application:(UIApplication*)application
-        didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken
-    {
-        // re-post ( broadcast )
-        NSString* token = [[[[deviceToken description]
-            stringByReplacingOccurrencesOfString:@"<" withString:@""]
-            stringByReplacingOccurrencesOfString:@">" withString:@""]
-            stringByReplacingOccurrencesOfString:@" " withString:@""];
-
-        [[NSNotificationCenter defaultCenter] postNotificationName:CDVRemoteNotification object:token];
-    }
-
-    - (void)                                 application:(UIApplication*)application
-        didFailToRegisterForRemoteNotificationsWithError:(NSError*)error
-    {
-        // re-post ( broadcast )
-        [[NSNotificationCenter defaultCenter] postNotificationName:CDVRemoteNotificationError object:error];
-    }
-#endif
+//#ifndef DISABLE_PUSH_NOTIFICATIONS
+//
+//    - (void)                                 application:(UIApplication*)application
+//        didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken
+//    {
+//        // re-post ( broadcast )
+//        NSString* token = [[[[deviceToken description]
+//            stringByReplacingOccurrencesOfString:@"<" withString:@""]
+//            stringByReplacingOccurrencesOfString:@">" withString:@""]
+//            stringByReplacingOccurrencesOfString:@" " withString:@""];
+//
+//        [[NSNotificationCenter defaultCenter] postNotificationName:CDVRemoteNotification object:token];
+//    }
+//
+//    - (void)                                 application:(UIApplication*)application
+//        didFailToRegisterForRemoteNotificationsWithError:(NSError*)error
+//    {
+//        // re-post ( broadcast )
+//        [[NSNotificationCenter defaultCenter] postNotificationName:CDVRemoteNotificationError object:error];
+//    }
+//#endif
 
 - (NSUInteger)application:(UIApplication*)application supportedInterfaceOrientationsForWindow:(UIWindow*)window
 {
