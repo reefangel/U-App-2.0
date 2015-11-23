@@ -33,7 +33,7 @@
 </ons-navigator>
 <ons-template id="menu.html">
   <ons-list>
-    <ons-list-item>Reef Angel Uapp 2.0.2</ons-list-item>
+    <ons-list-item>Reef Angel Uapp 2.0.3</ons-list-item>
     <ons-list-item modifier="tapable" onclick="menu.toggleMenu()">Close<span class="list-item-action">
       <ons-icon icon="ion-close-circled" size="22px"></ons-icon>
       </span></ons-list-item>
@@ -1074,6 +1074,7 @@
           </div>
         </div>
       </div>
+      <br>
     </div>
   </ons-page>
 </ons-template>
@@ -1125,7 +1126,7 @@
             <li class="list__item list__item--tappable" ng-if="salinityenabled">
               <label class="checkbox
                       checkbox--noborder checkbox--list-item">
-              <input type="checkbox" ng-model="graphsal">
+              <input type="checkbox" ng-model="$parent.graphsal">
               <div class="checkbox__checkmark
                         checkbox--noborder checkbox--list-item__checkmark"></div>
               {{saln}}
@@ -1134,7 +1135,7 @@
             <li class="list__item list__item--tappable" ng-if="orpenabled">
               <label class="checkbox
                       checkbox--noborder checkbox--list-item">
-              <input type="checkbox" ng-model="graphorp">
+              <input type="checkbox" ng-model="$parent.graphorp">
               <div class="checkbox__checkmark
                         checkbox--noborder checkbox--list-item__checkmark"></div>
               {{orpn}}
@@ -1143,7 +1144,7 @@
             <li class="list__item list__item--tappable" ng-if="pheenabled">
               <label class="checkbox
                       checkbox--noborder checkbox--list-item">
-              <input type="checkbox" ng-model="graphphe">
+              <input type="checkbox" ng-model="$parent.graphphe">
               <div class="checkbox__checkmark
                         checkbox--noborder checkbox--list-item__checkmark"></div>
               {{phen}}
@@ -1151,7 +1152,7 @@
             <li class="list__item list__item--tappable" ng-if="wlenabled">
               <label class="checkbox
                       checkbox--noborder checkbox--list-item">
-              <input type="checkbox" ng-model="graphwl">
+              <input type="checkbox" ng-model="$parent.graphwl">
               <div class="checkbox__checkmark
                         checkbox--noborder checkbox--list-item__checkmark"></div>
               {{wln}}
@@ -1159,7 +1160,7 @@
             <li class="list__item list__item--tappable" ng-if="multiwlenabled">
               <label class="checkbox
                       checkbox--noborder checkbox--list-item">
-              <input type="checkbox" ng-model="graphwl1">
+              <input type="checkbox" ng-model="$parent.graphwl1">
               <div class="checkbox__checkmark
                         checkbox--noborder checkbox--list-item__checkmark"></div>
               {{wl1n}}
@@ -1168,7 +1169,7 @@
             <li class="list__item list__item--tappable" ng-if="multiwlenabled">
               <label class="checkbox
                       checkbox--noborder checkbox--list-item">
-              <input type="checkbox" ng-model="graphwl2">
+              <input type="checkbox" ng-model="$parent.graphwl2">
               <div class="checkbox__checkmark
                         checkbox--noborder checkbox--list-item__checkmark"></div>
               {{wl2n}}
@@ -1177,7 +1178,7 @@
             <li class="list__item list__item--tappable" ng-if="multiwlenabled">
               <label class="checkbox
                       checkbox--noborder checkbox--list-item">
-              <input type="checkbox" ng-model="graphwl3">
+              <input type="checkbox" ng-model="$parent.graphwl3">
               <div class="checkbox__checkmark
                         checkbox--noborder checkbox--list-item__checkmark"></div>
               {{wl3n}}
@@ -1186,7 +1187,7 @@
             <li class="list__item list__item--tappable" ng-if="multiwlenabled">
               <label class="checkbox
                       checkbox--noborder checkbox--list-item">
-              <input type="checkbox" ng-model="graphwl4">
+              <input type="checkbox" ng-model="$parent.graphwl4">
               <div class="checkbox__checkmark
                         checkbox--noborder checkbox--list-item__checkmark"></div>
               {{wl4n}}
@@ -1195,7 +1196,7 @@
             <li class="list__item list__item--tappable" ng-if="parenabled">
               <label class="checkbox
                       checkbox--noborder checkbox--list-item">
-              <input type="checkbox" ng-model="graphpar">
+              <input type="checkbox" ng-model="$parent.graphpar">
               <div class="checkbox__checkmark
                         checkbox--noborder checkbox--list-item__checkmark"></div>
               {{parn}}
@@ -1204,7 +1205,7 @@
             <li class="list__item list__item--tappable" ng-if="humenabled">
               <label class="checkbox
                       checkbox--noborder checkbox--list-item">
-              <input type="checkbox" ng-model="graphhum">
+              <input type="checkbox" ng-model="$parent.graphhum">
               <div class="checkbox__checkmark
                         checkbox--noborder checkbox--list-item__checkmark"></div>
               {{humn}}
@@ -1281,16 +1282,16 @@
           <ons-list-item class="item-accordion" ng-if="isGroupShown(0)">
             <p>Please choose the settings for your Daylight and Actinic schedule. Delayed Start is useful for MH ballasts:</p>
             <label for="daylighton"><strong>Turn Daylights on at:</strong></label>
-            <input type="time" ng-model="daylighton" class="timetext"/>
+            <input type="time" ng-model="$parent.$parent.daylighton" class="timetext"/>
             <br>
             <label for="daylightoff"><strong>Turn Daylights off at:</strong></label>
-            <input type="time" ng-model="daylightoff" class="timetext"/>
+            <input type="time" ng-model="$parent.$parent.daylightoff" class="timetext"/>
             <br>
             <label for="daylightdelayed"><strong>Delayed Start (m):</strong></label>
-            <input type="number" ng-model="daylightdelayed" min="0" max="255" step="1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.daylightdelayed" min="0" max="255" step="1" class="timetext"/>
             <br>
             <label for="actinicoffset"><strong>Actinic Offset (m):</strong></label>
-            <input type="number" ng-model="actinicoffset" min="0" max="255" step="1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.actinicoffset" min="0" max="255" step="1" class="timetext"/>
           </ons-list-item>
           <ons-list-item ng-click="toggleGroup(1)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(1)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(1)"></ons-icon>
@@ -1299,19 +1300,19 @@
           <ons-list-item class="item-accordion" ng-if="isGroupShown(1)">
             <p>Please choose the temperature for your heater and chiller/fan:</p>
             <label for="heateron"><strong>Turn Heater on at:</strong></label>
-            <input type="number" ng-model="heateron" min="0" max="999" step="0.1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.heateron" min="0" max="999" step="0.1" class="timetext"/>
             <br>
             <label for="heateroff"><strong>Turn Heater off at:</strong></label>
-            <input type="number" ng-model="heateroff" min="0" max="999" step="0.1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.heateroff" min="0" max="999" step="0.1" class="timetext"/>
             <br>
             <label for="chilleron"><strong>Turn Chiller/Fan on at:</strong></label>
-            <input type="number" ng-model="chilleron" min="0" max="999" step="0.1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.chilleron" min="0" max="999" step="0.1" class="timetext"/>
             <br>
             <label for="chilleroff"><strong>Turn Chiller/Fan off at:</strong></label>
-            <input type="number" ng-model="chilleroff" min="0" max="999" step="0.1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.chilleroff" min="0" max="999" step="0.1" class="timetext"/>
             <br>
             <label for="overheat"><strong>Overheat Temperature:</strong></label>
-            <input type="number" ng-model="overheat" min="0" max="999" step="0.1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.overheat" min="0" max="999" step="0.1" class="timetext"/>
           </ons-list-item>
           <ons-list-item ng-click="toggleGroup(2)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(2)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(2)"></ons-icon>
@@ -1320,14 +1321,14 @@
           <ons-list-item class="item-accordion" ng-if="isGroupShown(2)">
             <p>Please choose the timeout for your Auto Top Off:</p>
             <label for="atotimeout"><strong>ATO Timeout (s):</strong></label>
-            <input type="number" ng-model="atotimeout" min="0"max="32000" step="1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.atotimeout" min="0"max="32000" step="1" class="timetext"/>
             <br>
             <p>Please choose the Water Level expansion High and Low levels:</p>
             <label for="waterlevellow"><strong>Low level (%):</strong></label>
-            <input type="number" ng-model="waterlevellow" min="0"max="100" step="1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.waterlevellow" min="0"max="100" step="1" class="timetext"/>
             <br>
             <label for="waterlevelhigh"><strong>High level (%):</strong></label>
-            <input type="number" ng-model="waterlevelhigh" min="0"max="100" step="1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.waterlevelhigh" min="0"max="100" step="1" class="timetext"/>
           </ons-list-item>
           <ons-list-item ng-click="toggleGroup(3)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(3)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(3)"></ons-icon>
@@ -1336,7 +1337,7 @@
           <ons-list-item class="item-accordion" ng-if="isGroupShown(3)">
             <p>Please choose the cycle for your wavemaker:</p>
             <label for="wmtimer"><strong>Cycle every (s):</strong></label>
-            <input type="number" ng-model="wmtimer" min="0"max="32000" step="1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.wmtimer" min="0"max="32000" step="1" class="timetext"/>
           </ons-list-item>
           <ons-list-item ng-click="toggleGroup(4)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(4)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(4)"></ons-icon>
@@ -1345,10 +1346,10 @@
           <ons-list-item class="item-accordion" ng-if="isGroupShown(4)">
             <p>Please choose the pH for your CO2 controlled device:</p>
             <label for="co2controlon"><strong>Turn on at:</strong></label>
-            <input type="number" ng-model="co2controlon" min="0"max="14" step=".01" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.co2controlon" min="0"max="14" step=".01" class="timetext"/>
             <br>
             <label for="co2controloff"><strong>Turn off at:</strong></label>
-            <input type="number" ng-model="co2controloff" min="0"max="14" step=".01" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.co2controloff" min="0"max="14" step=".01" class="timetext"/>
           </ons-list-item>
           <ons-list-item ng-click="toggleGroup(5)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(5)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(5)"></ons-icon>
@@ -1357,10 +1358,10 @@
           <ons-list-item class="item-accordion" ng-if="isGroupShown(5)">
             <p>Please choose the pH for your pH controlled device:</p>
             <label for="phcontrolon"><strong>Turn on at:</strong></label>
-            <input type="number" ng-model="phcontrolon" min="0"max="14" step=".01" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.phcontrolon" min="0"max="14" step=".01" class="timetext"/>
             <br>
             <label for="phcontroloff"><strong>Turn off at:</strong></label>
-            <input type="number" ng-model="phcontroloff" min="0"max="14" step=".01" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.phcontroloff" min="0"max="14" step=".01" class="timetext"/>
           </ons-list-item>
           <ons-list-item ng-click="toggleGroup(6)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(6)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(6)"></ons-icon>
@@ -1370,24 +1371,24 @@
             <p>Please choose the cycle and duration for your dosing pumps:</p>
             <h4>Dosing Pump 1 (0 minutes offset)</h4>
             <label for="dp1interval"><strong>Turn on every (m):</strong></label>
-            <input type="number" ng-model="dp1interval" min="0"max="32000" step="1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.dp1interval" min="0"max="32000" step="1" class="timetext"/>
             <br>
             <label for="dp1interval"><strong>Duration (s):</strong></label>
-            <input type="number" ng-model="dp1timer" min="0"max="255" step="1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.dp1timer" min="0"max="255" step="1" class="timetext"/>
             <br>
             <h4>Dosing Pump 2 (5 minutes offset)</h4>
             <label for="dp2interval"><strong>Turn on every (m):</strong></label>
-            <input type="number" ng-model="dp2interval" min="0"max="32000" step="1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.dp2interval" min="0"max="32000" step="1" class="timetext"/>
             <br>
             <label for="dp2interval"><strong>Duration (s):</strong></label>
-            <input type="number" ng-model="dp2timer" min="0"max="255" step="1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.dp2timer" min="0"max="255" step="1" class="timetext"/>
             <br>
             <h4>Dosing Pump 3 (10 minutes offset)</h4>
             <label for="dp3interval"><strong>Turn on every (m):</strong></label>
-            <input type="number" ng-model="dp3interval" min="0"max="32000" step="1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.dp3interval" min="0"max="32000" step="1" class="timetext"/>
             <br>
             <label for="dp3interval"><strong>Duration (s):</strong></label>
-            <input type="number" ng-model="dp3timer" min="0"max="255" step="1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.dp3timer" min="0"max="255" step="1" class="timetext"/>
           </ons-list-item>
           <ons-list-item ng-click="toggleGroup(7)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(7)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(7)"></ons-icon>
@@ -1396,7 +1397,7 @@
           <ons-list-item class="item-accordion" ng-if="isGroupShown(7)">
             <p>Please choose the delay you would like to wait to turn your devices after feeding/water change mode and power cycle:</p>
             <label for="delayedon"><strong>Delayed Start (m):</strong></label>
-            <input type="number" ng-model="delayedon" min="0"max="255" step="1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.delayedon" min="0"max="255" step="1" class="timetext"/>
           </ons-list-item>
           <ons-list-item ng-click="toggleGroup(8)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(8)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(8)"></ons-icon>
@@ -1406,25 +1407,25 @@
             <p>Please choose the start %, end % and duration for each standard dimming channel. Duration is only applicable for Slope.</p>
             <h4>Daylight Channel:</h4>
             <label for="pwmslopestartd"><strong>Start %:</strong></label>
-            <input type="number" ng-model="pwmslopestartd" min="0"max="100" step="1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.pwmslopestartd" min="0"max="100" step="1" class="timetext"/>
             <br>
             <label for="pwmslopeendd"><strong>End %:</strong></label>
-            <input type="number" ng-model="pwmslopeendd" min="0"max="100" step="1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.pwmslopeendd" min="0"max="100" step="1" class="timetext"/>
             <br>
             <label for="pwmslopedurationd"><strong>Duration (m):</strong></label>
             <input type="number" ng-model="pwmslopedurationd" min="0"max="255" step="1" class="timetext"/>
             <br>
             <h4>Actinic Channel:</h4>
             <label for="pwmslopestarta"><strong>Start %:</strong></label>
-            <input type="number" ng-model="pwmslopestarta" min="0"max="100" step="1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.pwmslopestarta" min="0"max="100" step="1" class="timetext"/>
             <br>
             <label for="pwmslopeenda"><strong>End %:</strong></label>
-            <input type="number" ng-model="pwmslopeenda" min="0"max="100" step="1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.pwmslopeenda" min="0"max="100" step="1" class="timetext"/>
             <br>
             <label for="pwmslopedurationa"><strong>Duration (m):</strong></label>
-            <input type="number" ng-model="pwmslopedurationa" min="0"max="255" step="1" class="timetext"/>
+            <input type="number" ng-model="$parent.$parent.pwmslopedurationa" min="0"max="255" step="1" class="timetext"/>
           </ons-list-item>
-          <ons-list-item ng-click="toggleGroup(9)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(9)}" ng-if="dimmingenabled">
+          <ons-list-item ng-click="toggleGroup(9)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(9)}" ng-if="dimmingexpansionenabled">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(9)"></ons-icon>
             <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(9)"></ons-icon>
             Dimming Expansion </ons-list-item>
@@ -1433,13 +1434,13 @@
             <div ng-repeat="n in [0,1,2,3,4,5]">
               <h4>Channel {{n}}:</h4>
               <label><strong>Start %:</strong></label>
-              <input type="number" ng-model="pwmslopestart[n]" min="0"max="100" step="1" class="timetext"/>
+              <input type="number" ng-model="$parent.$parent.pwmslopestart[n]" min="0"max="100" step="1" class="timetext"/>
               <br>
               <label><strong>End %:</strong></label>
-              <input type="number" ng-model="pwmslopeend[0]" min="0"max="100" step="1" class="timetext"/>
+              <input type="number" ng-model="$parent.$parent.pwmslopeend[n]" min="0"max="100" step="1" class="timetext"/>
               <br>
               <label><strong>Duration (m):</strong></label>
-              <input type="number" ng-model="pwmslopeduration[0]" min="0"max="255" step="1" class="timetext"/>
+              <input type="number" ng-model="$parent.$parent.pwmslopeduration[n]" min="0"max="255" step="1" class="timetext"/>
               <br>
             </div>
           </ons-list-item>

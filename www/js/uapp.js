@@ -7,7 +7,7 @@ var editcontrollerid;
 var seriesOptions;
 var chart;
 var names;
-var memoryraw;
+var memoryraw="";
 var MemString;
 var MemURL;
 var memindex;
@@ -19,6 +19,11 @@ var parametersscope;
 var settingsscope;
 var relayscope;
 var currentstorage;
+var ourtimer;
+var currenttimeout;
+var updatestring;
+var internalmemoryrootscope
+var internalmemoryscope;
 
 var rfmodes = ["Constant","Lagoon","Reef Crest","Short Pulse","Long Pulse","Nutrient Transport","Tidal Swell","Feeding","Feeding","Night","Storm","Custom","Else"];
 var rfimages= ["constant.png","lagoon.png","reefcrest.png","shortpulse.png","longpulse.png","ntm.png","tsm.png","feeding.png","feeding.png","night.png","storm.png","custom.png","custom.png"];
@@ -37,6 +42,7 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 	dropdownscope=$scope;
 	relayscope=$scope;
 	loaddefaultvalues();
+	loaddefaultlabels();
 	if ($localStorage.controllers != null)
 	{
 		$scope.activecontroller=$localStorage.activecontroller;
@@ -46,6 +52,7 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 				$scope.activecontroller=$localStorage.controllers[0].name;
 				$localStorage.activecontrollerid=0;
 			}
+		if ($localStorage.jsonlabels==null) $localStorage.jsonlabels=jsonlabels;
 	}
 	else
 	{
@@ -78,11 +85,143 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 	}
 	$scope.syncdate=function(){
 		var d=new Date();
-		$scope.getcontrollerdata('d' + d.getHours().toString() + d.getMinutes().toString() + "," + (d.getMonth()+1).toString() + d.getDate().toString() + "," + (d.getYear()-100).toString());
+		$scope.getcontrollerdata('d' + d.getHours().padLeft() + d.getMinutes().padLeft() + "," + (d.getMonth()+1).padLeft() + d.getDate().padLeft() + "," + (d.getYear()-100).toString());
 	}
 	$scope.getcontrollerdata=function(cmd){
 		if ($localStorage.controllers.length==0) return;
-		console.log(cmd);
+		//console.log(cmd);
+		if (mqtt!=null )
+		{
+			message=null;
+			switch (cmd) {
+				case "mf":
+					if ((json.RA.SF & 1<<2)==1<<2)
+						ons.notification.alert({message: 'Already in Water Change Mode', title: 'Reef Angel Controller' });
+					else
+						if ((json.RA.SF & 1<<1)==1<<1)
+							ons.notification.alert({message: 'Already in Feeding Mode', title: 'Reef Angel Controller' });
+						else
+							message = new Paho.MQTT.Message("mf:1");
+					break;
+				case "mw":
+					if ((json.RA.SF & 1<<1)==1<<1)
+						ons.notification.alert({message: 'Already in Feeding Mode', title: 'Reef Angel Controller' });
+					else
+						if ((json.RA.SF & 1<<2)==1<<2)
+							ons.notification.alert({message: 'Already in Water Change Mode', title: 'Reef Angel Controller' });
+						else
+							message = new Paho.MQTT.Message("mw:1");
+					break;
+				case "bp":
+					if ((json.RA.SF & 1<<1)==0 && (json.RA.SF & 1<<2)==0)
+						ons.notification.alert({message: 'Not in Feeding Mode nor Water Change Mode', title: 'Reef Angel Controller' });
+					if ((json.RA.SF & 1<<1)==1<<1)
+						message = new Paho.MQTT.Message("mf:0");
+					if ((json.RA.SF & 1<<2)==1<<2)
+						message = new Paho.MQTT.Message("mw:0");
+					break;
+				case "l0":
+					if ((json.RA.SF & 1<<0)==0)
+						ons.notification.alert({message: 'Lights on already cancelled', title: 'Reef Angel Controller' });
+					else
+						message = new Paho.MQTT.Message("l:0");
+					break;
+				case "l1":
+					if ((json.RA.SF & 1<<0)==1<<0)
+						ons.notification.alert({message: 'Already in Lights On', title: 'Reef Angel Controller' });
+					else
+						message = new Paho.MQTT.Message("l:1");
+					break;
+				case "mt":
+					if ((json.RA.AF & 1<<0)==0)
+						ons.notification.alert({message: 'No ATO Timeout flag', title: 'Reef Angel Controller' });
+					else
+						message = new Paho.MQTT.Message("mt:0");
+					break;
+				case "mo":
+					if ((json.RA.AF & 1<<0)==0)
+						ons.notification.alert({message: 'No Overheat flag', title: 'Reef Angel Controller' });
+					else
+						message = new Paho.MQTT.Message("mo:0");
+					break;
+				case "ml":
+					if ((json.RA.AF & 1<<0)==0)
+						ons.notification.alert({message: 'No Leak flag', title: 'Reef Angel Controller' });
+					else
+						message = new Paho.MQTT.Message("ml:0");
+					break;
+				case "boot":
+					message = new Paho.MQTT.Message("boot:0");
+					break;
+				case "v":
+					message = new Paho.MQTT.Message("v:0");
+					break;
+			}
+			if (cmd.substring(0,1)=='d')
+				message = new Paho.MQTT.Message("date:1:"+cmd.substring(1,13).split(",").join(""));
+			if (cmd.substring(0,4)=='cvar')
+			{
+				message = new Paho.MQTT.Message(cmd.replace("cvar","cvar:").replace(",",":"));
+				updatestring="C"+cmd.substring(4,5)+":";
+			}
+			if (cmd.substring(0,2)=='po')
+			{
+				message = new Paho.MQTT.Message(cmd.replace("po","po:").replace(",",":"));
+				updatestring=pwmchannels[cmd.substring(2,cmd.indexOf(","))] + "O:";
+			}
+			if (cmd.substring(0,2)=='mb')
+			{
+				message = new Paho.MQTT.Message(cmd.replace("mb","mb:").replace(",",":"));
+				if (cmd.substring(2,5)=='255')
+					updatestring="RFM:";
+				if (cmd.substring(2,5)=='256')
+					updatestring="RFS:";
+				if (cmd.substring(2,5)=='257')
+					updatestring="RFD:";
+				if (cmd.substring(2,5)=='337')
+					updatestring="DCM:";
+				if (cmd.substring(2,5)=='338')
+					updatestring="DCS:";
+				if (cmd.substring(2,5)=='339')
+					updatestring="DCD:";
+			}
+			if (cmd.substring(0,1)=='r' && cmd != "r99")
+			{
+				message = new Paho.MQTT.Message(cmd.replace("r","r:"));
+				if(cmd.substring(3,4)=='0')
+					updatestring="ROFF";
+				if(cmd.substring(3,4)=='1')
+					updatestring="RON";
+				if(cmd.substring(3,4)=='2')
+					updatestring="RON";
+				updatestring+=cmd.substring(1,2)+":";
+			}
+			if (cmd.substring(0,2)=='mr')
+			{
+				message = new Paho.MQTT.Message("mr:0");
+				updatestring="MR21:";
+			}
+			if (message!=null)
+			{
+				modal.show();
+				currenttimeout=$timeout;
+				ourtimer=$timeout(function() {
+					modal.hide();
+					ons.notification.alert({message: 'Timeout. Please try again.', title: 'Reef Angel Controller' });
+				}, 8000);			
+				message.destinationName = cloudusername + "/in";
+				mqtt.send(message);
+			}
+			return;
+		}
+		if (mqtt==null && cloudusername!=null && cloudpassword!=null && cmd == "r99")
+		{
+			$scope.cloudstatus="Connecting...";
+			json.RA.cloudstatus="Connecting...";
+			MQTTconnect();
+			return;
+		}
+		
 		modal.show();
 		var tempurl="http://" + $localStorage.controllers[$localStorage.activecontrollerid].ipaddress + ":" + $localStorage.controllers[$localStorage.activecontrollerid].port + "/" + cmd;
 		var request=$http({
@@ -418,6 +557,7 @@ app.controller('Settings', function($rootScope, $scope, $timeout, $localStorage)
 			$localStorage.json=null;
 			jsonlabel=null;
 			$localStorage.jsonlabel=null;
+			MQTTdisconnect();
 			$rootScope.$broadcast('msg', 'paramsok');
 			$rootScope.$broadcast('msg', 'popoverclose');
 		}
@@ -435,6 +575,7 @@ app.controller('Settings', function($rootScope, $scope, $timeout, $localStorage)
 			}
 		}
 		loaddefaultvalues();
+		loaddefaultlabels();
 		$scope.loadcontrollertab();
 	}
 	$scope.loadcontrollertab=function(){
@@ -478,12 +619,12 @@ app.controller('Settings', function($rootScope, $scope, $timeout, $localStorage)
 					$localStorage.activecontrollerid=null;
 					editcontrollerid=null;
 					$rootScope.$broadcast('msg', 'paramsok');
-					$rootScope.$broadcast('msg', 'popoverclose');
 				}
 				if ($localStorage.activecontrollerid==id)
 				{
-					changeactivecontroller($scope, $localStorage, $rootScope, id-1);
+					changeactivecontroller($scope, $localStorage, $rootScope, 0);
 				}
+				$rootScope.$broadcast('msg', 'popoverclose');
 				tabbar.loadPage('settings.html');
 				break;
 			}
@@ -496,6 +637,13 @@ app.controller('PopoverController', function($rootScope, $scope, $http, $localSt
 	$scope.$storage = $localStorage;
 	$scope.controllers=$localStorage.controllers;
 	if ($localStorage.controllers == null) $localStorage.controllers=[];
+	$scope.$on('msg', function(event, msg) {
+		console.log('PopoverController'+msg);
+		if (msg=="popoverclose")
+		{
+			$scope.controllers=$localStorage.controllers;
+		}
+	});
 	$scope.controllerselected=function(id){
 		changeactivecontroller($scope, $localStorage, $rootScope, id);
 	}
@@ -559,13 +707,20 @@ app.controller('Graph', function($rootScope, $scope, $http, $timeout, $localStor
 		if ($scope.graphwl4==true) names.push("WL4");
 		if ($scope.graphpar==true) names.push("PAR");
 		if ($scope.graphhum==true) names.push("HUM");
+		console.log($scope.graphph);
+		console.log($scope.graphsal);
 		CreateChart($scope,"container");
 	}
 });
 
 app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $localStorage){
 	$scope.$storage = $localStorage;
+	internalmemoryrootscope=$rootScope;
+	internalmemoryscope=$scope;
+	currenttimeout=$timeout;
 	$scope.showim=true;
+	$scope.dimmingexpansionenabled = ((json.RA.EM & 1) == 1);
+	memoryraw="";
 	$scope.$on('msg', function(event, msg) {
 		//console.log('Parameters'+msg);
 		if (msg=="memoryrawok")
@@ -616,6 +771,7 @@ app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $
 		$scope.showim=true;
 		$scope.getcontrollerdata('mr');
 		$scope.memoryresult="";
+		memoryraw="";
 	}
 	$scope.loadcontrollertab=function(){
 		editcontrollerid=null;
@@ -741,37 +897,44 @@ app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $
 	
 	$scope.updatecontrollermemory=function(cmd){
 		console.log(cmd);
-		var tempurl="http://" + $localStorage.controllers[$localStorage.activecontrollerid].ipaddress + ":" + $localStorage.controllers[$localStorage.activecontrollerid].port + "/" + cmd;
-		var request=$http({
-			method:"GET",
-			url: tempurl,
-			timeout: 3000
-		});
-		request.success(function(data){
-			console.log(data);
-			if (data.indexOf("OK")>0)
-				$scope.memoryresult+=": OK\n";
-			else
-				$scope.memoryresult+=": Error\n";
-			if (memindex<(MemString.length-1))
-			{
-				memindex++;
-				$scope.memoryresult+=MemString[memindex];
-				$timeout(function() {
-					$scope.updatecontrollermemory(MemURL[memindex]);
-				}, 1000);
-			}
-			else
-			{
+		if (mqtt!=null )
+		{
+			SaveMQTTMemory(cmd);
+		}
+		else
+		{
+			var tempurl="http://" + $localStorage.controllers[$localStorage.activecontrollerid].ipaddress + ":" + $localStorage.controllers[$localStorage.activecontrollerid].port + "/" + cmd;
+			var request=$http({
+				method:"GET",
+				url: tempurl,
+				timeout: 3000
+			});
+			request.success(function(data){
+				console.log(data);
+				if (data.indexOf("OK")>0)
+					$scope.memoryresult+=": OK\n";
+				else
+					$scope.memoryresult+=": Error\n";
+				if (memindex<(MemString.length-1))
+				{
+					memindex++;
+					$scope.memoryresult+=MemString[memindex];
+					$timeout(function() {
+						$scope.updatecontrollermemory(MemURL[memindex]);
+					}, 1000);
+				}
+				else
+				{
+					modal.hide();
+				}
+	
+			});
+			request.error(function(data){
 				modal.hide();
-			}
-
-		});
-		request.error(function(data){
-			modal.hide();
-			ons.notification.alert({message: 'Unable to process controller data!'});
-		})
-	}	
+				ons.notification.alert({message: 'Unable to process controller data!'});
+			})
+		}
+	}
 });
 
 function UpdateParams($scope,$timeout,$localStorage)
@@ -781,8 +944,12 @@ function UpdateParams($scope,$timeout,$localStorage)
 	if ($localStorage.controllers.length>0)
 	{
 		//MQTTdisconnect();
-		cloudusername=$localStorage.controllers[$localStorage.activecontrollerid].cloudusername;
-		cloudpassword=$localStorage.controllers[$localStorage.activecontrollerid].cloudpassword;
+		if ($localStorage.controllers[$localStorage.activecontrollerid]!=null)
+		{
+			cloudusername=$localStorage.controllers[$localStorage.activecontrollerid].cloudusername;
+			cloudpassword=$localStorage.controllers[$localStorage.activecontrollerid].cloudpassword;
+		}
+		$scope.cloudenabled=false;
 		if (cloudusername!=null && cloudpassword!=null)
 		{
 			$scope.cloudenabled=true;
@@ -851,7 +1018,6 @@ function UpdateParams($scope,$timeout,$localStorage)
 			$scope.pwme4 = json.RA.PWME4;
 			$scope.pwme5 = json.RA.PWME5;
 		}
-		CheckDimmingOverride($scope);
 		if ((json.RA.EM & 2) == 2)
 		{
 			$scope.rfm = rfmodes[json.RA.RFM];
@@ -904,6 +1070,7 @@ function UpdateParams($scope,$timeout,$localStorage)
 			$scope.pwmd = json.RA.PWMD;
 		if (json.RA.PWMA!=null)
 			$scope.pwma = json.RA.PWMA;
+		CheckDimmingOverride($scope);
 		CheckCvar($scope);
 		$scope.c0 = json.RA.C0;
 		$scope.c1 = json.RA.C1;
@@ -1302,12 +1469,10 @@ function CheckRelay($scope)
 	}
 }
 
-function loaddefaultvalues()
+function loaddefaultlabels()
 {
 	if (jsonlabels==null) jsonlabels=new Object();
 	if (jsonlabels.RA==null) jsonlabels.RA=new Object();
-	if (json==null) json=new Object();
-	if (json.RA==null) json.RA=new Object();
 	jsonlabels.RA.T1N = "Temp 1";
 	jsonlabels.RA.T2N = "Temp 2";
 	jsonlabels.RA.T3N = "Temp 3";
@@ -1364,6 +1529,11 @@ function loaddefaultvalues()
 			jsonlabels.RA["R"+a+b+"N"] = "Relay " + a + b;
 		}
 	}
+}
+function loaddefaultvalues()
+{
+	if (json==null) json=new Object();
+	if (json.RA==null) json.RA=new Object();
 	json.RA.T1 = "0.0";
 	json.RA.T2 = "0.0";
 	json.RA.T3 = "0.0";
@@ -1411,7 +1581,7 @@ function loaddefaultvalues()
 	json.RA.IO2 = "0";
 	json.RA.IO3 = "0";
 	json.RA.IO4 = "0";
-	json.RA.IO5 = "0";
+	json.RA.IO5 = "0";	
 }
 
 function loadlabels($scope) {
@@ -1496,9 +1666,19 @@ function changeactivecontroller($scope, $localStorage, $rootScope, id)
 	json=$localStorage.jsonarray[id];
 	$localStorage.json=json;
 	jsonlabels=$localStorage.jsonlabelsarray[id];
-	$localStorage.jsonlabels=jsonlabels;
+	if (jsonlabels==null) loaddefaultlabels();
+	cloudusername=$localStorage.controllers[$localStorage.activecontrollerid].cloudusername;
+	cloudpassword=$localStorage.controllers[$localStorage.activecontrollerid].cloudpassword;
+	MQTTdisconnect();
 	$rootScope.$broadcast('msg', 'paramsok');
 	$rootScope.$broadcast('msg', 'popoverclose');
+	if (mqtt==null && cloudusername!=null && cloudpassword!=null)
+	{
+		$scope.cloudstatus="Connecting...";
+		json.RA.cloudstatus="Connecting...";
+		MQTTconnect();
+		return;
+	}
 }
 
 // create the chart when all data is loaded
@@ -1506,7 +1686,7 @@ function CreateChart($scope, container)
 {
 	if (names.length==0)
 	{
-		ons.notification.alert({message: 'At least on parameter needs to be checked.' });
+		ons.notification.alert({message: 'At least one parameter needs to be checked.' });
 		return false;
 	}
 	$scope.showgraphlist=false;
@@ -1748,12 +1928,6 @@ function DrawChart(container) {
 
 }	
 
-Number.prototype.pad = function(size) {
-      var s = String(this);
-      while (s.length < (size || 2)) {s = "0" + s;}
-      return s;
-    }
-	
 function getbytevalue(d,i)
 {
 	return parseInt(d.substr(i*2,2),16);
@@ -1768,6 +1942,25 @@ function SaveMemory(s,l)
 {
 	MemString.push(s);
 	MemURL.push(l);
+}
+
+function SaveMQTTMemory(cmd)
+{
+	if (cmd.substring(0,2)=='mb')
+	{
+		message = new Paho.MQTT.Message(cmd.replace("mb","mb:").replace(",",":"));
+		updatestring="MBOK:";
+	}			
+	if (message!=null)
+	{
+		modal.show();
+		ourtimer=currenttimeout(function() {
+			modal.hide();
+			ons.notification.alert({message: 'Timeout. Please try again.', title: 'Reef Angel Controller' });
+		}, 8000);			
+		message.destinationName = cloudusername + "/in";
+		mqtt.send(message);
+	}
 }
 
 function MQTTconnect() {
@@ -1788,9 +1981,11 @@ function MQTTconnect() {
 			{
 				parametersscope.cloudstatus="Disconnected";
 				relayscope.cloudstatus="Disconnected";
-				json.RA.cloudstatus="Disconnected";
-				parametersscope.$apply();
+				if (json!=null)
+					if (json.RA!=null)
+						json.RA.cloudstatus="Disconnected";
 			}
+			mqtt=null;
 		}
 	};
 
@@ -1804,13 +1999,6 @@ function MQTTconnect() {
 
 function MQTTdisconnect() {
 	console.log("Disconnected");
-	if (parametersscope.cloudenabled)
-	{
-		parametersscope.cloudstatus="Disconnected";
-		relayscope.cloudstatus="Disconnected";
-		json.RA.cloudstatus="Disconnected";
-		parametersscope.$apply();
-	}
 	if (mqtt!=null)	mqtt.disconnect();
 	mqtt=null;
 }
@@ -1818,7 +2006,9 @@ function MQTTdisconnect() {
 function onConnect() {
 	parametersscope.cloudstatus="Connected";
 	relayscope.cloudstatus="Connected";
-	json.RA.cloudstatus="Connected";
+	if (json!=null)
+		if (json.RA!=null)
+			json.RA.cloudstatus="Connected";
 	parametersscope.$apply();
 	mqtt.subscribe(cloudusername + "/out");
 	message = new Paho.MQTT.Message("all:0");
@@ -1832,8 +2022,10 @@ function onConnectionLost(response) {
 	{
 		parametersscope.cloudstatus="Disconnected";
 		relayscope.cloudstatus="Disconnected";
-		json.RA.cloudstatus="Disconnected";
-		parametersscope.$apply();
+		mqtt=null;
+		if (json!=null)
+			if (json.RA!=null)
+				json.RA.cloudstatus="Disconnected";
 	}
 };
 
@@ -1847,6 +2039,18 @@ function onMessageArrived(message) {
 	parametersscope.lastupdated=json.RA.lastrefresh;
 	relayscope.lastupdated=json.RA.lastrefresh;
 	parametersscope.forumid=json.RA.ID;
+	if (message.payloadString.indexOf("DATE:")!=-1)
+	{
+		currenttimeout.cancel( ourtimer );
+		modal.hide();
+		ons.notification.alert({message: 'Date/Time synced', title: 'Reef Angel Controller' });
+	}
+	if (message.payloadString.indexOf("V:")!=-1)
+	{
+		currenttimeout.cancel( ourtimer );
+		modal.hide();
+		ons.notification.alert({message: message.payloadString.replace("V:", "Version: "), title: 'Reef Angel Controller' });
+	}
 	if (message.payloadString.indexOf("R1:")!=-1 || message.payloadString.indexOf("R2:")!=-1 || message.payloadString.indexOf("R3:")!=-1 || message.payloadString.indexOf("R4:")!=-1 || message.payloadString.indexOf("R5:")!=-1 || message.payloadString.indexOf("R6:")!=-1 || message.payloadString.indexOf("R7:")!=-1 || message.payloadString.indexOf("R8:")!=-1 || message.payloadString.indexOf("ROFF")!=-1 ||  message.payloadString.indexOf("RON")!=-1)
 	{
 		UpdateCloudParam(message,"R1:","r1",1,0);
@@ -1892,13 +2096,43 @@ function onMessageArrived(message) {
 	UpdateCloudParam(message,"BID:","bid",1,0);
 	if (message.payloadString.indexOf("AF:")!=-1)
 	{
+		var oldaf=json.RA.AF;
 		UpdateCloudParam(message,"AF:","af",1,0);
 		CheckFlags(parametersscope);
+		if (oldaf!=json.RA.AF)
+		{
+			currenttimeout.cancel( ourtimer );
+			modal.hide();
+			if ((oldaf & 1<<0)==1<<0 && (json.RA.AF & 1<<0)==0)
+				ons.notification.alert({message: 'ATO Timeout Cleared', title: 'Reef Angel Controller' });
+			if ((oldaf & 1<<1)==1<<1 && (json.RA.AF & 1<<1)==0)
+				ons.notification.alert({message: 'Overheat Cleared', title: 'Reef Angel Controller' });
+			if ((oldaf & 1<<3)==1<<3 && (json.RA.AF & 1<<3)==0)
+				ons.notification.alert({message: 'Leak Cleared', title: 'Reef Angel Controller' });
+		}
 	}
 	if (message.payloadString.indexOf("SF:")!=-1)
 	{
+		var oldsf=json.RA.SF;
 		UpdateCloudParam(message,"SF:","sf",1,0);
 		CheckFlags(parametersscope);
+		if (oldsf!=json.RA.SF)
+		{
+			currenttimeout.cancel( ourtimer );
+			modal.hide();
+			if ((oldsf & 1<<0)==0 && (json.RA.SF & 1<<0)==1<<0)
+				ons.notification.alert({message: 'Lights On', title: 'Reef Angel Controller' });
+			if ((oldsf & 1<<1)==0 && (json.RA.SF & 1<<1)==1<<1)
+				ons.notification.alert({message: 'Feeding Mode Started', title: 'Reef Angel Controller' });
+			if ((oldsf & 1<<2)==0 && (json.RA.SF & 1<<2)==1<<2)
+				ons.notification.alert({message: 'Water Change Mode Started', title: 'Reef Angel Controller' });
+			if ((oldsf & 1<<0)==1<<0 && (json.RA.SF & 1<<0)==0)
+				ons.notification.alert({message: 'Lights Cancel', title: 'Reef Angel Controller' });
+			if ((oldsf & 1<<1)==1<<1 && (json.RA.SF & 1<<1)==0)
+				ons.notification.alert({message: 'Feeding Mode Ended', title: 'Reef Angel Controller' });
+			if ((oldsf & 1<<2)==1<<2 && (json.RA.SF & 1<<2)==0)
+				ons.notification.alert({message: 'Water Change Mode Ended', title: 'Reef Angel Controller' });
+		}
 	}
 	UpdateCloudParam(message,"PWMD:","pwmd",1,0);
 	UpdateCloudParam(message,"PWMA:","pwma",1,0);
@@ -2002,7 +2236,13 @@ function onMessageArrived(message) {
 	UpdateCloudParam(message,"CEXP5:","cexp5",1,0);
 	UpdateCloudParam(message,"CEXP6:","cexp6",1,0);
 	UpdateCloudParam(message,"CEXP7:","cexp7",1,0);
-	
+	if (message.payloadString.indexOf("MR")!=-1)
+	{
+		memoryraw+=message.payloadString.substr(5,message.payloadString.length);
+		//console.log(memoryraw);
+	}
+	UpdateCloudParam(message,"MR21:","mr21",1,0);
+	UpdateCloudParam(message,"MBOK:","mbok",1,0);
 	currentstorage.json=json;
 	currentstorage.jsonarray[currentstorage.activecontrollerid]=json;
 	parametersscope.$apply();
@@ -2016,5 +2256,50 @@ function UpdateCloudParam(message,id, element, division, decimal)
 		parametersscope[element]=(message.payloadString.replace(id,"")/division).toFixed(decimal);
 		//if (json.RA[id.replace(":","")]==null) json.RA.push(id.replace(":",""),0);
 		json.RA[id.replace(":","")]=message.payloadString.replace(id,"");
+		if (updatestring==id)
+		{
+			updatestring="";
+			currenttimeout.cancel( ourtimer );
+			modal.hide();
+			//console.log(id);
+			if (id=="PWMAO:" || id=="PWMDO:" || id=="PWMA2O:" || id=="PWMD2O:" || id=="PWME0O:" || id=="PWME1O:" || id=="PWME2O:" || id=="PWME3O:" || id=="PWME4O:" || id=="PWME5O:")
+				tabbar.loadPage('dimming.html');
+			else if (id=="RFWO:" || id=="RFRBO:" || id=="RFRO:" || id=="RFGO:" || id=="RFBO:" || id=="RFIO:" || id=="RFM:" || id=="RFS:" || id=="RFD:")
+				tabbar.loadPage('rf.html');
+			else if (id=="DCM:" || id=="DCS:" || id=="DCD:")
+				tabbar.loadPage('dcpump.html');
+			else if (id=="C0:" || id=="C1:" || id=="C2:" || id=="C3:" || id=="C4:" || id=="C5:" || id=="C6:" || id=="C7:")
+				tabbar.loadPage('customvar.html');
+			else if (id=="RON1:" || id=="RON2:" || id=="RON3:" || id=="RON4:" || id=="RON5:" || id=="RON6:" || id=="RON7:" || id=="RON8:" || id=="ROFF1:" || id=="ROFF2:" || id=="ROFF3:" || id=="ROFF4:" || id=="ROFF5:" || id=="ROFF6:" || id=="ROFF7:" || id=="ROFF8:")
+				console.log();
+			else if (message.payloadString.indexOf("MR21:")!=-1)
+				internalmemoryrootscope.$broadcast('msg', 'memoryrawok');
+			else if (id=="MBOK:")
+			{
+				internalmemoryscope.memoryresult+=": OK\n";
+				if (memindex<(MemString.length-1))
+				{
+					modal.show();
+					memindex++;
+					console.log(MemURL[memindex]);
+					internalmemoryscope.memoryresult+=MemString[memindex];
+					SaveMQTTMemory(MemURL[memindex]);
+				}
+			}
+			else
+				ons.notification.alert({message: 'Updated', title: 'Reef Angel Controller' });
+		}
 	}
 }
+
+Number.prototype.padLeft = function(base,chr){
+   var  len = (String(base || 10).length - String(this).length)+1;
+   return len > 0? new Array(len).join(chr || '0')+this : this;
+}
+
+Number.prototype.pad = function(size) {
+      var s = String(this);
+      while (s.length < (size || 2)) {s = "0" + s;}
+      return s;
+    }
+	
