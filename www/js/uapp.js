@@ -24,13 +24,16 @@ var currenttimeout;
 var updatestring;
 var internalmemoryrootscope
 var internalmemoryscope;
+var localserver;
+
+
 
 var rfmodes = ["Constant","Lagoon","Reef Crest","Short Pulse","Long Pulse","Nutrient Transport","Tidal Swell","Feeding","Feeding","Night","Storm","Custom","Else"];
 var rfimages= ["constant.png","lagoon.png","reefcrest.png","shortpulse.png","longpulse.png","ntm.png","tsm.png","feeding.png","feeding.png","night.png","storm.png","custom.png","custom.png"];
 var rfmodecolors = ["#00682e","#ffee00","#ffee00","#16365e","#d99593","#eb70ff","#eb70ff","#000000","#000000","#000000","#000000","#000000","#000000"];
-var dimmingchannels = ["Daylight Channel","Actinic Channel","Daylight 2 Channel","Actinic 2 Channel","Dimming Channel 0","Dimming Channel 1","Dimming Channel 2","Dimming Channel 3","Dimming Channel 4","Dimming Channel 5","AI White Channel","AI Royal Blue Channel","AI Blue Channel","Radion White Channel","Radion Royal Blue Channel","Radion Red Channel","Radion Green Channel","Radion Blue Channel","Radion Intensity Channel"];
+var dimmingchannels = ["Daylight Channel","Actinic Channel","Dimming Channel 0","Dimming Channel 1","Dimming Channel 2","Dimming Channel 3","Dimming Channel 4","Dimming Channel 5","AI White Channel","AI Royal Blue Channel","AI Blue Channel","Radion White Channel","Radion Royal Blue Channel","Radion Red Channel","Radion Green Channel","Radion Blue Channel","Radion Intensity Channel","Daylight 2 Channel","Actinic 2 Channel"];
 var customvars = ["Custom Var 0","Custom Var 1","Custom Var 2","Custom Var 3","Custom Var 4","Custom Var 5","Custom Var 6","Custom Var 7"];
-var pwmchannels = ["PWMD","PWMA","PWMD2","PWMA2","PWME0","PWME1","PWME2","PWME3","PWME4","PWME5","AIW","AIRB","AIB","RFW","RFRB","RFR","RFG","RFB","RFI"];
+var pwmchannels = ["PWMD","PWMA","PWME0","PWME1","PWME2","PWME3","PWME4","PWME5","AIW","AIRB","AIB","RFW","RFRB","RFR","RFG","RFB","RFI","PWMD2","PWMA2"];
 
 var app = ons.bootstrap('uapp',['ngStorage','ngAnimate']);
 
@@ -41,6 +44,7 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 	//$localStorage.controllers = null;
 	dropdownscope=$scope;
 	relayscope=$scope;
+	localserver=window.location.href.indexOf("content.html")!=-1;
 	loaddefaultvalues();
 	loaddefaultlabels();
 	if ($localStorage.controllers != null)
@@ -88,7 +92,7 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 		$scope.getcontrollerdata('d' + d.getHours().padLeft() + d.getMinutes().padLeft() + "," + (d.getMonth()+1).padLeft() + d.getDate().padLeft() + "," + (d.getYear()-100).toString());
 	}
 	$scope.getcontrollerdata=function(cmd){
-		if ($localStorage.controllers.length==0) return;
+		if ($localStorage.controllers.length==0 && !localserver) return;
 		//console.log(cmd);
 		if (mqtt!=null )
 		{
@@ -223,7 +227,12 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 		}
 		
 		modal.show();
-		var tempurl="http://" + $localStorage.controllers[$localStorage.activecontrollerid].ipaddress + ":" + $localStorage.controllers[$localStorage.activecontrollerid].port + "/" + cmd;
+		var tempurl;
+		
+		if (localserver)
+			tempurl=document.referrer.replace("wifi","") + cmd;
+		else
+			tempurl="http://" + $localStorage.controllers[$localStorage.activecontrollerid].ipaddress + ":" + $localStorage.controllers[$localStorage.activecontrollerid].port + "/" + cmd;
 		var request=$http({
 			method:"GET",
 			url: tempurl,
@@ -256,7 +265,7 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 				{
 					var channel = cmd.substring(0,cmd.search(",")).replace("po","");
 					var value = cmd.substring(cmd.search(",")+1,cmd.length)
-					setjson(pwmchannels[channel],value);
+					//if (value<=100) setjson(pwmchannels[channel],value);
 					setjson(pwmchannels[channel] + 'O',value);
 					$rootScope.$broadcast('msg', 'overrideok');
 				}
@@ -410,9 +419,9 @@ app.controller('Parameters', function($rootScope, $scope, $timeout, $localStorag
 	$scope.dimmingoverride=function(channel){
 		tabbar.loadPage('dimmingoverride.html');
 		channeloverride=channel;
-		if (channel<10)
+		if (channel<8 || channel==17 || channel==18)
 			statusindex=7;
-		else if (channel>12)
+		else if (channel>10 && channel<17)
 			statusindex=8;
 	}
 	$scope.overridechange=function(){
@@ -424,16 +433,16 @@ app.controller('Parameters', function($rootScope, $scope, $timeout, $localStorag
 		if (statusindex==6) tabbar.loadPage('dcpump.html');
 	}
 	$scope.setoverride=function(){
-		if (channeloverride<10)
+		if (channeloverride<8 || channeloverride==17 || channeloverride==18)
 			statusindex=3;
-		else if (channeloverride>12)
+		else if (channeloverride>10 && channeloverride<17)
 			statusindex=5;
 		$scope.getcontrollerdata('po'+channeloverride+','+$scope.dimmingoverridechange);
 	}
 	$scope.canceloverride=function(){
-		if (channeloverride<10)
+		if (channeloverride<8 || channeloverride==17 || channeloverride==18)
 			statusindex=3;
-		else if (channeloverride>12)
+		else if (channeloverride>10 && channeloverride<17)
 			statusindex=5;
 		$scope.getcontrollerdata('po'+channeloverride+',255');
 	}
@@ -707,8 +716,15 @@ app.controller('Graph', function($rootScope, $scope, $http, $timeout, $localStor
 		if ($scope.graphwl4==true) names.push("WL4");
 		if ($scope.graphpar==true) names.push("PAR");
 		if ($scope.graphhum==true) names.push("HUM");
-		console.log($scope.graphph);
-		console.log($scope.graphsal);
+		if ($scope.graphcustom==true)
+		{
+			var items = $scope.graphcustomitems.split(",");
+			console.log(items.length);
+			for (a=0; a<items.length; a++)
+			{
+				names.push(items[a].toUpperCase());
+			}
+		}
 		CreateChart($scope,"container");
 	}
 });
@@ -1092,72 +1108,72 @@ function UpdateParams($scope,$timeout,$localStorage)
 			$scope.dimmingoverridechange = $scope.pwma;
 			$scope.dimmingoverrideslider = "{'range': true, 'actinicslider': true}";
 		}
-		if (channeloverride==2)
+		if (channeloverride==17)
 		{
 			$scope.dimmingoverridechange = $scope.pwmd2;
 			$scope.dimmingoverrideslider = "{'range': true, 'daylightslider': true}";
 		}
-		if (channeloverride==3)
+		if (channeloverride==18)
 		{
 			$scope.dimmingoverridechange = $scope.pwma2;
 			$scope.dimmingoverrideslider = "{'range': true, 'actinicslider': true}";
 		}
-		if (channeloverride==4)
+		if (channeloverride==2)
 		{
 			$scope.dimmingoverridechange = $scope.pwme0;
 			$scope.dimmingoverrideslider = "{'range': true, 'pwmeslider': true}";
 		}
-		if (channeloverride==5)
+		if (channeloverride==3)
 		{
 			$scope.dimmingoverridechange = $scope.pwme1;
 			$scope.dimmingoverrideslider = "{'range': true, 'pwmeslider': true}";
 		}
-		if (channeloverride==6)
+		if (channeloverride==4)
 		{
 			$scope.dimmingoverridechange = $scope.pwme2;
 			$scope.dimmingoverrideslider = "{'range': true, 'pwmeslider': true}";
 		}
-		if (channeloverride==7)
+		if (channeloverride==5)
 		{
 			$scope.dimmingoverridechange = $scope.pwme3;
 			$scope.dimmingoverrideslider = "{'range': true, 'pwmeslider': true}";
 		}
-		if (channeloverride==8)
+		if (channeloverride==6)
 		{
 			$scope.dimmingoverridechange = $scope.pwme4;
 			$scope.dimmingoverrideslider = "{'range': true, 'pwmeslider': true}";
 		}
-		if (channeloverride==9)
+		if (channeloverride==7)
 		{
 			$scope.dimmingoverridechange = $scope.pwme5;
 			$scope.dimmingoverrideslider = "{'range': true, 'pwmeslider': true}";
 		}
-		if (channeloverride==13)
+		if (channeloverride==11)
 		{
 			$scope.dimmingoverridechange = $scope.rfw;
 			$scope.dimmingoverrideslider = "{'range': true, 'daylightslider': true}";
 		}
-		if (channeloverride==14)
+		if (channeloverride==12)
 		{
 			$scope.dimmingoverridechange = $scope.rfrb;
 			$scope.dimmingoverrideslider = "{'range': true, 'actinicslider': true}";
 		}
-		if (channeloverride==15)
+		if (channeloverride==13)
 		{
 			$scope.dimmingoverridechange = $scope.rfr;
 			$scope.dimmingoverrideslider = "{'range': true, 'redslider': true}";
 		}
-		if (channeloverride==16)
+		if (channeloverride==14)
 		{
 			$scope.dimmingoverridechange = $scope.rfg;
 			$scope.dimmingoverrideslider = "{'range': true, 'pwmeslider': true}";
 		}
-		if (channeloverride==17)
+		if (channeloverride==15)
 		{
 			$scope.dimmingoverridechange = $scope.rfb;
 			$scope.dimmingoverrideslider = "{'range': true, 'blueslider': true}";
 		}
-		if (channeloverride==18)
+		if (channeloverride==16)
 		{
 			$scope.dimmingoverridechange = $scope.rfi;
 			$scope.dimmingoverrideslider = "{'range': true, 'intensityslider': true}";
