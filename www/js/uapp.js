@@ -21,7 +21,7 @@ var relayscope;
 var currentstorage;
 var ourtimer;
 var currenttimeout;
-var updatestring;
+var updatestring="";
 var internalmemoryrootscope
 var internalmemoryscope;
 var localserver;
@@ -97,6 +97,7 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 		if (mqtt!=null )
 		{
 			message=null;
+			console.log(cmd);
 			switch (cmd) {
 				case "mf":
 					if ((json.RA.SF & 1<<2)==1<<2)
@@ -143,13 +144,13 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 						message = new Paho.MQTT.Message("mt:0");
 					break;
 				case "mo":
-					if ((json.RA.AF & 1<<0)==0)
+					if ((json.RA.AF & 1<<1)==0)
 						ons.notification.alert({message: 'No Overheat flag', title: 'Reef Angel Controller' });
 					else
 						message = new Paho.MQTT.Message("mo:0");
 					break;
 				case "ml":
-					if ((json.RA.AF & 1<<0)==0)
+					if ((json.RA.AF & 1<<3)==0)
 						ons.notification.alert({message: 'No Leak flag', title: 'Reef Angel Controller' });
 					else
 						message = new Paho.MQTT.Message("ml:0");
@@ -192,13 +193,22 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 			if (cmd.substring(0,1)=='r' && cmd != "r99")
 			{
 				message = new Paho.MQTT.Message(cmd.replace("r","r:"));
-				if(cmd.substring(3,4)=='0')
+				if(cmd.substring(cmd.length-1,cmd.length)=='0')
 					updatestring="ROFF";
-				if(cmd.substring(3,4)=='1')
+				if(cmd.substring(cmd.length-1,cmd.length)=='1')
 					updatestring="RON";
-				if(cmd.substring(3,4)=='2')
-					updatestring="RON";
-				updatestring+=cmd.substring(1,2)+":";
+				if(cmd.substring(cmd.length-1,cmd.length)=='2')
+				{
+					if (cmd.length==4)
+						updatestring="RON" + cmd.substring(1,2) + ":ROFF";
+					else
+						updatestring="RON:ROFF";
+				}
+				if (cmd.length==4)
+					updatestring+=cmd.substring(1,2)+":";
+				else
+					updatestring+=":";
+					
 			}
 			if (cmd.substring(0,2)=='mr')
 			{
@@ -309,6 +319,7 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 			if (cmd.substring(0,2)=='mr')
 			{
 				memoryraw = data.replace('<MEM>','').replace('</MEM>','');
+				memoryraw = memoryraw.split(" ").join("");
 				$rootScope.$broadcast('msg', 'memoryrawok');
 			}
 		});
@@ -705,6 +716,9 @@ app.controller('Graph', function($rootScope, $scope, $http, $timeout, $localStor
 		if ($scope.grapht1==true) names.push("T1");
 		if ($scope.grapht2==true) names.push("T2");
 		if ($scope.grapht3==true) names.push("T3");
+		if ($scope.grapht4==true) names.push("T4");
+		if ($scope.grapht5==true) names.push("T5");
+		if ($scope.grapht6==true) names.push("T6");
 		if ($scope.graphph==true) names.push("PH");
 		if ($scope.graphsal==true) names.push("SAL");
 		if ($scope.graphorp==true) names.push("ORP");
@@ -741,9 +755,11 @@ app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $
 		//console.log('Parameters'+msg);
 		if (msg=="memoryrawok")
 		{
+			memoryraw = memoryraw.split(" ").join("");
 			$scope.daylighton=new Date("01/01/01 " + getbytevalue(memoryraw,4).pad() + ":" + getbytevalue(memoryraw,5).pad());
 			$scope.daylightoff=new Date("01/01/01 " + getbytevalue(memoryraw,6).pad() + ":" + getbytevalue(memoryraw,7).pad());
 			$scope.daylightdelayed=getbytevalue(memoryraw,35);
+			console.log(memoryraw);
 			$scope.actinicoffset=getbytevalue(memoryraw,84);
 			$scope.heateron=parseFloat(getintvalue(memoryraw,22)/10);
 			$scope.heateroff=parseFloat(getintvalue(memoryraw,24)/10);
@@ -991,6 +1007,9 @@ function UpdateParams($scope,$timeout,$localStorage)
 		$scope.t1 = (json.RA.T1/10).toFixed(1);
 		$scope.t2 = (json.RA.T2/10).toFixed(1);
 		$scope.t3 = (json.RA.T3/10).toFixed(1);
+		$scope.t4 = (json.RA.T4/10).toFixed(1);
+		$scope.t5 = (json.RA.T5/10).toFixed(1);
+		$scope.t6 = (json.RA.T6/10).toFixed(1);
 		$scope.ph = (json.RA.PH/100).toFixed(2);
 		if (json.RA.BID == 4)
 		{
@@ -1036,11 +1055,11 @@ function UpdateParams($scope,$timeout,$localStorage)
 		}
 		if ((json.RA.EM & 2) == 2)
 		{
-			$scope.rfm = rfmodes[json.RA.RFM];
+			$scope.rfm = rfmodes[parseInt(json.RA.RFM)];
 			$scope.rfs = json.RA.RFS;
 			$scope.rfd = json.RA.RFD;
-			$scope.rfmodecolor = rfmodecolors[json.RA.RFM];
-			$scope.rfimage = rfimages[json.RA.RFM];
+			$scope.rfmodecolor = rfmodecolors[parseInt(json.RA.RFM)];
+			$scope.rfimage = rfimages[parseInt(json.RA.RFM)];
 			$scope.rfw = json.RA.RFW;
 			$scope.rfrb = json.RA.RFRB;
 			$scope.rfr = json.RA.RFR;
@@ -1071,11 +1090,11 @@ function UpdateParams($scope,$timeout,$localStorage)
 			$scope.hum = json.RA.HUM;
 		if ((json.RA.EM1 & 2) == 2)
 		{
-			$scope.dcm = rfmodes[json.RA.DCM];
+			$scope.dcm = rfmodes[parseInt(json.RA.DCM)];
 			$scope.dcs = json.RA.DCS;
 			$scope.dcd = json.RA.DCD;
-			$scope.dcmodecolor = rfmodecolors[json.RA.DCM];
-			$scope.dcimage = rfimages[json.RA.DCM];
+			$scope.dcmodecolor = rfmodecolors[parseInt(json.RA.DCM)];
+			$scope.dcimage = rfimages[parseInt(json.RA.DCM)];
 		}
 		if ((json.RA.EM1 & 8) == 8)
 			$scope.par = json.RA.PAR;
@@ -1492,6 +1511,9 @@ function loaddefaultlabels()
 	jsonlabels.RA.T1N = "Temp 1";
 	jsonlabels.RA.T2N = "Temp 2";
 	jsonlabels.RA.T3N = "Temp 3";
+	jsonlabels.RA.T4N = "Temp 4";
+	jsonlabels.RA.T5N = "Temp 5";
+	jsonlabels.RA.T6N = "Temp 6";
 	jsonlabels.RA.PHN = "pH";
 	jsonlabels.RA.ATOHIGHN = "ATO High";
 	jsonlabels.RA.ATOLOWN = "ATO Low";
@@ -1553,6 +1575,9 @@ function loaddefaultvalues()
 	json.RA.T1 = "0.0";
 	json.RA.T2 = "0.0";
 	json.RA.T3 = "0.0";
+	json.RA.T4 = "0.0";
+	json.RA.T5 = "0.0";
+	json.RA.T6 = "0.0";
 	json.RA.PH = "0.00";
 	json.RA.ATOHIGH = "0";
 	json.RA.ATOLOW = "0";
@@ -1606,6 +1631,9 @@ function loadlabels($scope) {
 		$scope.t1n=jsonlabels.RA.T1N;
 		$scope.t2n=jsonlabels.RA.T2N;
 		$scope.t3n=jsonlabels.RA.T3N;
+		$scope.t4n=jsonlabels.RA.T4N;
+		$scope.t5n=jsonlabels.RA.T5N;
+		$scope.t6n=jsonlabels.RA.T6N;
 		$scope.phn=jsonlabels.RA.PHN;
 		$scope.saln=jsonlabels.RA.SALN;
 		$scope.orpn=jsonlabels.RA.ORPN;
@@ -1682,6 +1710,14 @@ function changeactivecontroller($scope, $localStorage, $rootScope, id)
 	json=$localStorage.jsonarray[id];
 	$localStorage.json=json;
 	jsonlabels=$localStorage.jsonlabelsarray[id];
+	parametersscope.extratempenabled=false;
+	parametersscope.salinityenabled=false;
+	parametersscope.orpenabled=false;
+	parametersscope.pheenabled=false;
+	parametersscope.wlenabled=false;
+	parametersscope.multiwlenabled=false;
+	parametersscope.humenabled=false;
+	parametersscope.parenabled=false;
 	if (jsonlabels==null) loaddefaultlabels();
 	cloudusername=$localStorage.controllers[$localStorage.activecontrollerid].cloudusername;
 	cloudpassword=$localStorage.controllers[$localStorage.activecontrollerid].cloudpassword;
@@ -1764,6 +1800,24 @@ function CreateChart($scope, container)
 			else if (name == "T3") {
 				pcolor = '#9900CC'
 				tname = $scope.t3n
+				ydec = 1
+				yunit = '°'
+			}
+			else if (name == "T4") {
+				pcolor = '#9900CC'
+				tname = $scope.t4n
+				ydec = 1
+				yunit = '°'
+			}
+			else if (name == "T5") {
+				pcolor = '#9900CC'
+				tname = $scope.t5n
+				ydec = 1
+				yunit = '°'
+			}
+			else if (name == "T6") {
+				pcolor = '#9900CC'
+				tname = $scope.t6n
 				ydec = 1
 				yunit = '°'
 			}
@@ -1967,6 +2021,11 @@ function SaveMQTTMemory(cmd)
 		message = new Paho.MQTT.Message(cmd.replace("mb","mb:").replace(",",":"));
 		updatestring="MBOK:";
 	}			
+	if (cmd.substring(0,2)=='mi')
+	{
+		message = new Paho.MQTT.Message(cmd.replace("mi","mi:").replace(",",":"));
+		updatestring="MIOK:";
+	}			
 	if (message!=null)
 	{
 		modal.show();
@@ -1982,7 +2041,7 @@ function SaveMQTTMemory(cmd)
 function MQTTconnect() {
 	console.log("Connecting...");
 	mqtt = new Paho.MQTT.Client(
-					"forum.reefangel.com",
+					"104.36.18.211",
 					9001,
 					"web_" + parseInt(Math.random() * 100,
 					10));
@@ -2067,8 +2126,11 @@ function onMessageArrived(message) {
 		modal.hide();
 		ons.notification.alert({message: message.payloadString.replace("V:", "Version: "), title: 'Reef Angel Controller' });
 	}
-	if (message.payloadString.indexOf("R1:")!=-1 || message.payloadString.indexOf("R2:")!=-1 || message.payloadString.indexOf("R3:")!=-1 || message.payloadString.indexOf("R4:")!=-1 || message.payloadString.indexOf("R5:")!=-1 || message.payloadString.indexOf("R6:")!=-1 || message.payloadString.indexOf("R7:")!=-1 || message.payloadString.indexOf("R8:")!=-1 || message.payloadString.indexOf("ROFF")!=-1 ||  message.payloadString.indexOf("RON")!=-1)
+	if ((message.payloadString.indexOf("R:")!=-1 && message.payloadString.indexOf("PAR:")==-1) || message.payloadString.indexOf("R1:")!=-1 || message.payloadString.indexOf("R2:")!=-1 || message.payloadString.indexOf("R3:")!=-1 || message.payloadString.indexOf("R4:")!=-1 || message.payloadString.indexOf("R5:")!=-1 || message.payloadString.indexOf("R6:")!=-1 || message.payloadString.indexOf("R7:")!=-1 || message.payloadString.indexOf("R8:")!=-1 || message.payloadString.indexOf("ROFF")!=-1 ||  message.payloadString.indexOf("RON")!=-1)
 	{
+		UpdateCloudParam(message,"R:","r",1,0);
+		UpdateCloudParam(message,"ROFF:","roff",1,0);
+		UpdateCloudParam(message,"RON:","ron",1,0);
 		UpdateCloudParam(message,"R1:","r1",1,0);
 		UpdateCloudParam(message,"ROFF1:","roff1",1,0);
 		UpdateCloudParam(message,"RON1:","ron1",1,0);
@@ -2166,9 +2228,9 @@ function onMessageArrived(message) {
 		UpdateCloudParam(message,"DCM:","dcm",1,0);
 		UpdateCloudParam(message,"DCS:","dcs",1,0);
 		UpdateCloudParam(message,"DCD:","dcd",1,0);
-		parametersscope.dcm = rfmodes[json.RA.DCM];
-		parametersscope.dcmodecolor = rfmodecolors[json.RA.DCM];
-		parametersscope.dcimage = rfimages[json.RA.RFM];
+		parametersscope.dcm = rfmodes[parseInt(json.RA.DCM)];
+		parametersscope.dcmodecolor = rfmodecolors[parseInt(json.RA.DCM)];
+		parametersscope.dcimage = rfimages[parseInt(json.RA.RFM)];
 	}
 	UpdateCloudParam(message,"PWME0:","pwme0",1,0);
 	UpdateCloudParam(message,"PWME1:","pwme1",1,0);
@@ -2198,9 +2260,9 @@ function onMessageArrived(message) {
 		UpdateCloudParam(message,"RFM:","rfm",1,0);
 		UpdateCloudParam(message,"RFS:","rfs",1,0);
 		UpdateCloudParam(message,"RFD:","rfd",1,0);
-		parametersscope.rfm = rfmodes[json.RA.RFM];
-		parametersscope.rfmodecolor = rfmodecolors[json.RA.RFM];
-		parametersscope.rfimage = rfimages[json.RA.RFM];
+		parametersscope.rfm = rfmodes[parseInt(json.RA.RFM)];
+		parametersscope.rfmodecolor = rfmodecolors[parseInt(json.RA.RFM)];
+		parametersscope.rfimage = rfimages[parseInt(json.RA.RFM)];
 	}
 	UpdateCloudParam(message,"RFW:","rfw",1,0);
 	UpdateCloudParam(message,"RFRB:","rfrb",1,0);
@@ -2239,6 +2301,14 @@ function onMessageArrived(message) {
 	UpdateCloudParam(message,"T1:","t1",10,1);
 	UpdateCloudParam(message,"T2:","t2",10,1);
 	UpdateCloudParam(message,"T3:","t3",10,1);
+	if (json.RA.T4!== undefined && json.RA.T5!== undefined && json.RA.T6!== undefined)
+	{
+		if (json.RA.T4!=0 || json.RA.T5!=0 || json.RA.T6!=0)
+			parametersscope.extratempenabled=true;
+	}
+	UpdateCloudParam(message,"T4:","t4",10,1);
+	UpdateCloudParam(message,"T5:","t5",10,1);
+	UpdateCloudParam(message,"T6:","t6",10,1);
 	UpdateCloudParam(message,"PH:","ph",100,2);
 	UpdateCloudParam(message,"ORP:","orp",1,0);
 	UpdateCloudParam(message,"SAL:","sal",10,1);
@@ -2254,11 +2324,13 @@ function onMessageArrived(message) {
 	UpdateCloudParam(message,"CEXP7:","cexp7",1,0);
 	if (message.payloadString.indexOf("MR")!=-1)
 	{
-		memoryraw+=message.payloadString.substr(5,message.payloadString.length);
+		memoryraw+=message.payloadString.substr(5,message.payloadString.length-7);
+		memoryraw = memoryraw.split(" ").join("");
 		//console.log(memoryraw);
 	}
 	UpdateCloudParam(message,"MR21:","mr21",1,0);
 	UpdateCloudParam(message,"MBOK:","mbok",1,0);
+	UpdateCloudParam(message,"MIOK:","miok",1,0);
 	currentstorage.json=json;
 	currentstorage.jsonarray[currentstorage.activecontrollerid]=json;
 	parametersscope.$apply();
@@ -2272,7 +2344,8 @@ function UpdateCloudParam(message,id, element, division, decimal)
 		parametersscope[element]=(message.payloadString.replace(id,"")/division).toFixed(decimal);
 		//if (json.RA[id.replace(":","")]==null) json.RA.push(id.replace(":",""),0);
 		json.RA[id.replace(":","")]=message.payloadString.replace(id,"");
-		if (updatestring==id)
+		//if (updatestring!="") console.log("check: " + updatestring + "-" + id);
+		if (updatestring==id || updatestring.indexOf(id)!=-1)
 		{
 			updatestring="";
 			currenttimeout.cancel( ourtimer );
@@ -2286,11 +2359,11 @@ function UpdateCloudParam(message,id, element, division, decimal)
 				tabbar.loadPage('dcpump.html');
 			else if (id=="C0:" || id=="C1:" || id=="C2:" || id=="C3:" || id=="C4:" || id=="C5:" || id=="C6:" || id=="C7:")
 				tabbar.loadPage('customvar.html');
-			else if (id=="RON1:" || id=="RON2:" || id=="RON3:" || id=="RON4:" || id=="RON5:" || id=="RON6:" || id=="RON7:" || id=="RON8:" || id=="ROFF1:" || id=="ROFF2:" || id=="ROFF3:" || id=="ROFF4:" || id=="ROFF5:" || id=="ROFF6:" || id=="ROFF7:" || id=="ROFF8:")
-				console.log();
+			else if (id=="RON:" || id=="RON1:" || id=="RON2:" || id=="RON3:" || id=="RON4:" || id=="RON5:" || id=="RON6:" || id=="RON7:" || id=="RON8:" || id=="ROFF:" || id=="ROFF1:" || id=="ROFF2:" || id=="ROFF3:" || id=="ROFF4:" || id=="ROFF5:" || id=="ROFF6:" || id=="ROFF7:" || id=="ROFF8:")
+				updatestring="";
 			else if (message.payloadString.indexOf("MR21:")!=-1)
 				internalmemoryrootscope.$broadcast('msg', 'memoryrawok');
-			else if (id=="MBOK:")
+			else if (id=="MBOK:" || id=="MIOK:")
 			{
 				internalmemoryscope.memoryresult+=": OK\n";
 				if (memindex<(MemString.length-1))
@@ -2305,6 +2378,7 @@ function UpdateCloudParam(message,id, element, division, decimal)
 			else
 				ons.notification.alert({message: 'Updated', title: 'Reef Angel Controller' });
 		}
+		//updatestring="";
 	}
 }
 
