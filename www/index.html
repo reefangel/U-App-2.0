@@ -47,8 +47,10 @@
       <ons-icon icon="ion-plus-round" size="22px"></ons-icon>
       </span></ons-list-item>
     <ons-list-item modifier="chevron" ng-click="getportallabels();" onclick="menu.toggleMenu()">Download Labels from Portal</ons-list-item>
-    <ons-list-item modifier="chevron" ng-click="syncdate();" onclick="menu.toggleMenu()">Sync RA Date w/ Phone</ons-list-item>
+    <ons-list-item modifier="chevron" ng-click="syncdate();" onclick="menu.toggleMenu()">Sync RA Time with Phone</ons-list-item>
+    <ons-list-item modifier="chevron" ng-click="getcontrollerdata('d');" onclick="menu.toggleMenu()">Get RA Time</ons-list-item>
     <ons-list-item modifier="chevron" ng-click="getcontrollerdata('v');" onclick="menu.toggleMenu()">Get RA Version</ons-list-item>
+    <ons-list-item modifier="chevron" ng-click="showforumid();" onclick="menu.toggleMenu()">Get Forum Username</ons-list-item>
     <ons-list-item modifier="chevron" ng-click="getcontrollerdata('boot');" onclick="menu.toggleMenu()">Reboot Controller</ons-list-item>
   </ons-list>
 </ons-template>
@@ -70,7 +72,7 @@
         <ons-toolbar-button ng-click="popover.show($event);">{{activecontroller}}</ons-toolbar-button>
       </div>
       <div class="right">
-        <ons-toolbar-button ng-click="getcontrollerdata('r99');" class="refreshbutton">Refresh
+        <ons-toolbar-button ng-click="refresh();" class="refreshbutton">Refresh
           <ons-icon icon="ion-refresh">
         </ons-toolbar-button>
       </div>
@@ -86,15 +88,14 @@
 </ons-template>
 <ons-template id="parameters.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center;"> <img src="images/logo.png"><br>
-      <b>Status</b></h4>
+    <h4 style="text-align: center;"><img style="text-align: center;" src="images/logo.png"></h4>
     <div ng-controller="Parameters">
-      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
       <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">Forum username:</div>
-      <div class="lastupdatedvalue">{{forumid}}</div>
+      <div class="lastupdatedlabel">Current mode: </div>
+      <div class="lastupdatedvalue">{{mode}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;">
           <div class="button-bar__item">
@@ -103,7 +104,8 @@
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadflagstab();">
-            <button class="button-bar__button">Flags</button>
+            <button class="button-bar__button" ng-if="alertnoflag">Flags</button>
+            <button class="button-bar__button" id="alert" ng-if="alertnoflag == false">Flags</button>
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadiotab();">
@@ -190,15 +192,14 @@
 </ons-template>
 <ons-template id="flags.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b> </h4>
+    <h4 style="text-align: center;"><img style="text-align: center;" src="images/logo.png"></h4>
     <div ng-controller="Parameters">
-      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
       <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">Forum username:</div>
-      <div class="lastupdatedvalue">{{forumid}}</div>
+      <div class="lastupdatedlabel">Current mode: </div>
+      <div class="lastupdatedvalue">{{mode}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
           <div class="button-bar__item">
@@ -251,15 +252,14 @@
 </ons-template>
 <ons-template id="io.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b> </h4>
+    <h4 style="text-align: center;"><img style="text-align: center;" src="images/logo.png"></h4>
     <div ng-controller="Parameters">
-      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
       <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">Forum username:</div>
-      <div class="lastupdatedvalue">{{forumid}}</div>
+      <div class="lastupdatedlabel">Current mode: </div>
+      <div class="lastupdatedvalue">{{mode}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
           <div class="button-bar__item">
@@ -268,7 +268,8 @@
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadflagstab();">
-            <button class="button-bar__button">Flags</button>
+            <button class="button-bar__button" ng-if="alertnoflag">Flags</button>
+            <button class="button-bar__button" id="alert" ng-if="alertnoflag == false">Flags</button>
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadiotab();" checked>
@@ -326,15 +327,14 @@
 </ons-template>
 <ons-template id="dimming.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b> </h4>
+    <h4 style="text-align: center;"><img style="text-align: center;" src="images/logo.png"></h4>
     <div ng-controller="Parameters">
-      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
       <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">Forum username:</div>
-      <div class="lastupdatedvalue">{{forumid}}</div>
+      <div class="lastupdatedlabel">Current mode: </div>
+      <div class="lastupdatedvalue">{{mode}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
           <div class="button-bar__item">
@@ -343,7 +343,8 @@
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadflagstab();">
-            <button class="button-bar__button">Flags</button>
+            <button class="button-bar__button" ng-if="alertnoflag">Flags</button>
+            <button class="button-bar__button" id="alert" ng-if="alertnoflag == false">Flags</button>
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadiotab();">
@@ -431,15 +432,14 @@
 </ons-template>
 <ons-template id="customvar.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b> </h4>
+    <h4 style="text-align: center;"><img style="text-align: center;" src="images/logo.png"></h4>
     <div ng-controller="Parameters">
-      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
       <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">Forum username:</div>
-      <div class="lastupdatedvalue">{{forumid}}</div>
+      <div class="lastupdatedlabel">Current mode: </div>
+      <div class="lastupdatedvalue">{{mode}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
           <div class="button-bar__item">
@@ -448,7 +448,8 @@
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadflagstab();">
-            <button class="button-bar__button">Flags</button>
+            <button class="button-bar__button" ng-if="alertnoflag">Flags</button>
+            <button class="button-bar__button" id="alert" ng-if="alertnoflag == false">Flags</button>
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadiotab();">
@@ -497,15 +498,14 @@
 </ons-template>
 <ons-template id="rf.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b> </h4>
+    <h4 style="text-align: center;"><img style="text-align: center;" src="images/logo.png"></h4>
     <div ng-controller="Parameters">
-      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
       <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">Forum username:</div>
-      <div class="lastupdatedvalue">{{forumid}}</div>
+      <div class="lastupdatedlabel">Current mode: </div>
+      <div class="lastupdatedvalue">{{mode}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
           <div class="button-bar__item">
@@ -514,7 +514,8 @@
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadflagstab();">
-            <button class="button-bar__button">Flags</button>
+            <button class="button-bar__button" ng-if="alertnoflag">Flags</button>
+            <button class="button-bar__button" id="alert" ng-if="alertnoflag == false">Flags</button>
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadiotab();">
@@ -586,15 +587,14 @@
 </ons-template>
 <ons-template id="dcpump.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b> </h4>
+    <h4 style="text-align: center;"><img style="text-align: center;" src="images/logo.png"></h4>
     <div ng-controller="Parameters">
-      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
       <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">Forum username:</div>
-      <div class="lastupdatedvalue">{{forumid}}</div>
+      <div class="lastupdatedlabel">Current mode: </div>
+      <div class="lastupdatedvalue">{{mode}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
           <div class="button-bar__item">
@@ -603,7 +603,8 @@
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadflagstab();">
-            <button class="button-bar__button">Flags</button>
+            <button class="button-bar__button" ng-if="alertnoflag">Flags</button>
+            <button class="button-bar__button" id="alert" ng-if="alertnoflag == false">Flags</button>
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadiotab();">
@@ -643,15 +644,14 @@
 </ons-template>
 <ons-template id="dimmingoverride.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b> </h4>
+    <h4 style="text-align: center;"><img style="text-align: center;" src="images/logo.png"></h4>
     <div ng-controller="Parameters">
-      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
       <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">Forum username:</div>
-      <div class="lastupdatedvalue">{{forumid}}</div>
+      <div class="lastupdatedlabel">Current mode: </div>
+      <div class="lastupdatedvalue">{{mode}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
           <div class="button-bar__item">
@@ -660,7 +660,8 @@
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadflagstab();">
-            <button class="button-bar__button">Flags</button>
+            <button class="button-bar__button" ng-if="alertnoflag">Flags</button>
+            <button class="button-bar__button" id="alert" ng-if="alertnoflag == false">Flags</button>
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadiotab();">
@@ -710,15 +711,14 @@
 </ons-template>
 <ons-template id="cvarupdate.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b> </h4>
+    <h4 style="text-align: center;"><img style="text-align: center;" src="images/logo.png"></h4>
     <div ng-controller="Parameters">
-      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
       <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">Forum username:</div>
-      <div class="lastupdatedvalue">{{forumid}}</div>
+      <div class="lastupdatedlabel">Current mode: </div>
+      <div class="lastupdatedvalue">{{mode}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
           <div class="button-bar__item">
@@ -727,7 +727,8 @@
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadflagstab();">
-            <button class="button-bar__button">Flags</button>
+            <button class="button-bar__button" ng-if="alertnoflag">Flags</button>
+            <button class="button-bar__button" id="alert" ng-if="alertnoflag == false">Flags</button>
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadiotab();">
@@ -773,15 +774,14 @@
 </ons-template>
 <ons-template id="rfmodeupdate.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b> </h4>
+    <h4 style="text-align: center;"><img style="text-align: center;" src="images/logo.png"></h4>
     <div ng-controller="Parameters">
-      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
       <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">Forum username:</div>
-      <div class="lastupdatedvalue">{{forumid}}</div>
+      <div class="lastupdatedlabel">Current mode: </div>
+      <div class="lastupdatedvalue">{{mode}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
           <div class="button-bar__item">
@@ -790,7 +790,8 @@
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadflagstab();">
-            <button class="button-bar__button">Flags</button>
+            <button class="button-bar__button" ng-if="alertnoflag">Flags</button>
+            <button class="button-bar__button" id="alert" ng-if="alertnoflag == false">Flags</button>
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadiotab();">
@@ -835,15 +836,14 @@
 </ons-template>
 <ons-template id="dcmodeupdate.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b> </h4>
+    <h4 style="text-align: center;"><img style="text-align: center;" src="images/logo.png"></h4>
     <div ng-controller="Parameters">
-      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
       <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">Forum username:</div>
-      <div class="lastupdatedvalue">{{forumid}}</div>
+      <div class="lastupdatedlabel">Current mode: </div>
+      <div class="lastupdatedvalue">{{mode}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
           <div class="button-bar__item">
@@ -852,7 +852,8 @@
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadflagstab();">
-            <button class="button-bar__button">Flags</button>
+            <button class="button-bar__button" ng-if="alertnoflag">Flags</button>
+            <button class="button-bar__button" id="alert" ng-if="alertnoflag == false">Flags</button>
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadiotab();">
@@ -897,15 +898,14 @@
 </ons-template>
 <ons-template id="speedupdate.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b> </h4>
+    <h4 style="text-align: center;"><img style="text-align: center;" src="images/logo.png"></h4>
     <div ng-controller="Parameters">
-      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
       <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">Forum username:</div>
-      <div class="lastupdatedvalue">{{forumid}}</div>
+      <div class="lastupdatedlabel">Current mode: </div>
+      <div class="lastupdatedvalue">{{mode}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
           <div class="button-bar__item">
@@ -914,7 +914,8 @@
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadflagstab();">
-            <button class="button-bar__button">Flags</button>
+            <button class="button-bar__button" ng-if="alertnoflag">Flags</button>
+            <button class="button-bar__button" id="alert" ng-if="alertnoflag == false">Flags</button>
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadiotab();">
@@ -960,15 +961,14 @@
 </ons-template>
 <ons-template id="durationupdate.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b> </h4>
+    <h4 style="text-align: center;"><img style="text-align: center;" src="images/logo.png"></h4>
     <div ng-controller="Parameters">
-      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
       <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">Forum username:</div>
-      <div class="lastupdatedvalue">{{forumid}}</div>
+      <div class="lastupdatedlabel">Current mode: </div>
+      <div class="lastupdatedvalue">{{mode}}</div>
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;"">
           <div class="button-bar__item">
@@ -977,7 +977,8 @@
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadflagstab();">
-            <button class="button-bar__button">Flags</button>
+            <button class="button-bar__button" ng-if="alertnoflag">Flags</button>
+            <button class="button-bar__button" id="alert" ng-if="alertnoflag == false">Flags</button>
           </div>
           <div class="button-bar__item">
             <input type="radio" name="status_buttons" ng-click="loadiotab();">
@@ -1026,12 +1027,12 @@
     <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
       <b>Relay</b> </h4>
     <div ng-controller="Relay">
-      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud Server: </div>
+      <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
       <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
       <div class="lastupdatedlabel">Last updated: </div>
       <div class="lastupdatedvalue">{{lastupdated}}</div>
-      <div class="lastupdatedlabel">Forum username:</div>
-      <div class="lastupdatedvalue">{{forumid}}</div>
+      <div class="lastupdatedlabel">Current mode: </div>
+      <div class="lastupdatedvalue">{{mode}}</div>
       <div class="relayheader" ng-if="mainenabled">Main Box</div>
       <div ng-if="mainenabled" ng-repeat="n in [1,2,3,4,5,6,7,8]">
         <div class="relaylabel"><span ng-bind="r{{n}}n"></span></div>
@@ -1454,6 +1455,16 @@
               <br>
             </div>
           </ons-list-item>
+          <ons-list-item ng-click="toggleGroup(10)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(10)}">
+            <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(10)"></ons-icon>
+            <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(10)"></ons-icon>
+            Feeding Mode
+          </ons-list-item>
+          <ons-list-item class="item-accordion" ng-if="isGroupShown(10)">
+            <p>Please choose the length of time of the feeding mode:</p>
+            <label for="feedingtimer"><strong>Feeding Timer (s):</strong></label>
+            <input type="number" ng-model="$parent.$parent.feedingtimer" min="0"max="32000" step="1" class="timetext"/>
+          </ons-list-item>
         </ons-list>
 	    <div class="rflabel, whitespace">{{memoryresult}}</div>
         <div class="controllerlist" ng-if="showim">
@@ -1511,7 +1522,7 @@
 <ons-template id="modes.html">
   <ons-toolbar>
     <div class="left" style="line-height: 44px">
-      <ons-back-button>Back</ons-back-button>
+      <ons-back-button ng-click="refresh();">Back</ons-back-button>
     </div>
     <div class="center"><b>Modes</b></div>
   </ons-toolbar>

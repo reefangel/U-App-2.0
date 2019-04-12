@@ -1,5 +1,6 @@
 var json;
 var jsonlabels;
+var jsondefaultlabels;
 var statusindex = 0;
 var channeloverride;
 var cvarupdateindex;
@@ -26,8 +27,6 @@ var internalmemoryrootscope
 var internalmemoryscope;
 var localserver;
 
-
-
 var rfmodes = ["Constant","Lagoon","Reef Crest","Short Pulse","Long Pulse","Nutrient Transport","Tidal Swell","Feeding","Feeding","Night","Storm","Custom","Else"];
 var rfimages= ["constant.png","lagoon.png","reefcrest.png","shortpulse.png","longpulse.png","ntm.png","tsm.png","feeding.png","feeding.png","night.png","storm.png","custom.png","custom.png"];
 var rfmodecolors = ["#00682e","#ffee00","#ffee00","#16365e","#d99593","#eb70ff","#eb70ff","#000000","#000000","#000000","#000000","#000000","#000000"];
@@ -38,9 +37,11 @@ var pwmchannels = ["PWMD","PWMA","PWME0","PWME1","PWME2","PWME3","PWME4","PWME5"
 var app = ons.bootstrap('uapp',['ngStorage','ngAnimate']);
 
 app.controller('DropdownController', function($rootScope, $scope, $http, $localStorage, $timeout){
-    $scope.rfmodes = [{"name":"Constant","color":"#00682e","id":"0"},{"name":"Lagoon","color":"#ffee00","id":"1"},{"name":"Reef Crest","color":"#ffee00","id":"2"},{"name":"Short Pulse","color":"#16365e","id":"3"},{"name":"Long Pulse","color":"#d99593","id":"4"},{"name":"Nutrient Transport","color":"#eb70ff","id":"5"},{"name":"Tidal Swell","color":"#eb70ff","id":"6"},{"name":"Feeding","color":"#F5C127","id":"7"},{"name":"Night","color":"#90C3D4","id":"9"},{"name":"Storm","color":"black","id":"10"},{"name":"Custom","color":"#72BD4D","id":"11"}];
-    $scope.dcmodes = [{"name":"Constant","color":"#00682e","id":"0"},{"name":"Lagoon","color":"#ffee00","id":"1"},{"name":"Reef Crest","color":"#ffee00","id":"2"},{"name":"Short Pulse","color":"#16365e","id":"3"},{"name":"Long Pulse","color":"#d99593","id":"4"},{"name":"Nutrient Transport","color":"#eb70ff","id":"5"},{"name":"Tidal Swell","color":"#eb70ff","id":"6"},{"name":"Feeding","color":"#F5C127","id":"7"},{"name":"Night","color":"#90C3D4","id":"9"},{"name":"Storm","color":"black","id":"10"},{"name":"Custom","color":"#72BD4D","id":"11"},{"name":"Else","color":"#B28DC4","id":"12"},{"name":"Sine","color":"#47ADAC","id":"13"},{"name":"Gyre","color":"#768C8C","id":"14"}];
+	$scope.rfmodes = [{"name":"Constant","color":"#00682e","id":"0"},{"name":"Lagoon","color":"#ffee00","id":"1"},{"name":"Reef Crest","color":"#ffee00","id":"2"},{"name":"Short Pulse","color":"#16365e","id":"3"},{"name":"Long Pulse","color":"#d99593","id":"4"},{"name":"Nutrient Transport","color":"#eb70ff","id":"5"},{"name":"Tidal Swell","color":"#eb70ff","id":"6"},{"name":"Feeding","color":"#F5C127","id":"7"},{"name":"Night","color":"#90C3D4","id":"9"},{"name":"Storm","color":"black","id":"10"},{"name":"Custom","color":"#72BD4D","id":"11"}];
+	$scope.dcmodes = [{"name":"Constant","color":"#00682e","id":"0"},{"name":"Lagoon","color":"#ffee00","id":"1"},{"name":"Reef Crest","color":"#ffee00","id":"2"},{"name":"Short Pulse","color":"#16365e","id":"3"},{"name":"Long Pulse","color":"#d99593","id":"4"},{"name":"Nutrient Transport","color":"#eb70ff","id":"5"},{"name":"Tidal Swell","color":"#eb70ff","id":"6"},{"name":"Feeding","color":"#F5C127","id":"7"},{"name":"Night","color":"#90C3D4","id":"9"},{"name":"Storm","color":"black","id":"10"},{"name":"Custom","color":"#72BD4D","id":"11"},{"name":"Else","color":"#B28DC4","id":"12"},{"name":"Sine","color":"#47ADAC","id":"13"},{"name":"Gyre","color":"#768C8C","id":"14"}];
 	$scope.$storage = $localStorage;
+	$scope.radatetime = "Never";
+	var attempts=0;
 	//$localStorage.controllers = null;
 	dropdownscope=$scope;
 	relayscope=$scope;
@@ -84,147 +85,29 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 	ons.createPopover('popover.html').then(function(popover) {
 		$scope.popover = popover;
 	});
+
 	$scope.closealert=function(){
 		alertDialog.hide();
 	}
+
 	$scope.syncdate=function(){
 		var d=new Date();
 		$scope.getcontrollerdata('d' + d.getHours().padLeft() + d.getMinutes().padLeft() + "," + (d.getMonth()+1).padLeft() + d.getDate().padLeft() + "," + (d.getYear()-100).toString());
 	}
+
+	$scope.showforumid=function(){
+		ons.notification.alert({message: 'Forum username: ' + parametersscope.forumid, title: 'Reef Angel Controller'});
+	}
+
 	$scope.getcontrollerdata=function(cmd){
 		if ($localStorage.controllers.length==0 && !localserver) return;
 		//console.log(cmd);
-		if (mqtt!=null )
+		if (mqtt!=null)
 		{
-			message=null;
-			switch (cmd) {
-				case "mf":
-					if ((json.RA.SF & 1<<2)==1<<2)
-						ons.notification.alert({message: 'Already in Water Change Mode', title: 'Reef Angel Controller' });
-					else
-						if ((json.RA.SF & 1<<1)==1<<1)
-							ons.notification.alert({message: 'Already in Feeding Mode', title: 'Reef Angel Controller' });
-						else
-							message = new Paho.MQTT.Message("mf:1");
-					break;
-				case "mw":
-					if ((json.RA.SF & 1<<1)==1<<1)
-						ons.notification.alert({message: 'Already in Feeding Mode', title: 'Reef Angel Controller' });
-					else
-						if ((json.RA.SF & 1<<2)==1<<2)
-							ons.notification.alert({message: 'Already in Water Change Mode', title: 'Reef Angel Controller' });
-						else
-							message = new Paho.MQTT.Message("mw:1");
-					break;
-				case "bp":
-					if ((json.RA.SF & 1<<1)==0 && (json.RA.SF & 1<<2)==0)
-						ons.notification.alert({message: 'Not in Feeding Mode nor Water Change Mode', title: 'Reef Angel Controller' });
-					if ((json.RA.SF & 1<<1)==1<<1)
-						message = new Paho.MQTT.Message("mf:0");
-					if ((json.RA.SF & 1<<2)==1<<2)
-						message = new Paho.MQTT.Message("mw:0");
-					break;
-				case "l0":
-					if ((json.RA.SF & 1<<0)==0)
-						ons.notification.alert({message: 'Lights on already cancelled', title: 'Reef Angel Controller' });
-					else
-						message = new Paho.MQTT.Message("l:0");
-					break;
-				case "l1":
-					if ((json.RA.SF & 1<<0)==1<<0)
-						ons.notification.alert({message: 'Already in Lights On', title: 'Reef Angel Controller' });
-					else
-						message = new Paho.MQTT.Message("l:1");
-					break;
-				case "mt":
-					if ((json.RA.AF & 1<<0)==0)
-						ons.notification.alert({message: 'No ATO Timeout flag', title: 'Reef Angel Controller' });
-					else
-						message = new Paho.MQTT.Message("mt:0");
-					break;
-				case "mo":
-					if ((json.RA.AF & 1<<0)==0)
-						ons.notification.alert({message: 'No Overheat flag', title: 'Reef Angel Controller' });
-					else
-						message = new Paho.MQTT.Message("mo:0");
-					break;
-				case "ml":
-					if ((json.RA.AF & 1<<0)==0)
-						ons.notification.alert({message: 'No Leak flag', title: 'Reef Angel Controller' });
-					else
-						message = new Paho.MQTT.Message("ml:0");
-					break;
-				case "boot":
-					message = new Paho.MQTT.Message("boot:0");
-					break;
-				case "v":
-					message = new Paho.MQTT.Message("v:0");
-					break;
-			}
-			if (cmd.substring(0,1)=='d')
-				message = new Paho.MQTT.Message("date:1:"+cmd.substring(1,13).split(",").join(""));
-			if (cmd.substring(0,4)=='cvar')
-			{
-				message = new Paho.MQTT.Message(cmd.replace("cvar","cvar:").replace(",",":"));
-				updatestring="C"+cmd.substring(4,5)+":";
-			}
-			if (cmd.substring(0,2)=='po')
-			{
-				message = new Paho.MQTT.Message(cmd.replace("po","po:").replace(",",":"));
-				updatestring=pwmchannels[cmd.substring(2,cmd.indexOf(","))] + "O:";
-			}
-			if (cmd.substring(0,2)=='mb')
-			{
-				message = new Paho.MQTT.Message(cmd.replace("mb","mb:").replace(",",":"));
-				if (cmd.substring(2,5)=='255')
-					updatestring="RFM:";
-				if (cmd.substring(2,5)=='256')
-					updatestring="RFS:";
-				if (cmd.substring(2,5)=='257')
-					updatestring="RFD:";
-				if (cmd.substring(2,5)=='337')
-					updatestring="DCM:";
-				if (cmd.substring(2,5)=='338')
-					updatestring="DCS:";
-				if (cmd.substring(2,5)=='339')
-					updatestring="DCD:";
-			}
-			if (cmd.substring(0,1)=='r' && cmd != "r99")
-			{
-				message = new Paho.MQTT.Message(cmd.replace("r","r:"));
-				if(cmd.substring(3,4)=='0')
-					updatestring="ROFF";
-				if(cmd.substring(3,4)=='1')
-					updatestring="RON";
-				if(cmd.substring(3,4)=='2')
-					updatestring="RON";
-				updatestring+=cmd.substring(1,2)+":";
-			}
-			if (cmd.substring(0,2)=='mr')
-			{
-				message = new Paho.MQTT.Message("mr:0");
-				updatestring="MR21:";
-			}
-			if (message!=null)
-			{
-				modal.show();
-				currenttimeout=$timeout;
-				ourtimer=$timeout(function() {
-					modal.hide();
-					ons.notification.alert({message: 'Timeout. Please try again.', title: 'Reef Angel Controller' });
-				}, 8000);			
-				message.destinationName = cloudusername + "/in";
-				mqtt.send(message);
-			}
+			$scope.getcontrollerdatacloud(cmd);
 			return;
 		}
-		if (mqtt==null && cloudusername!=null && cloudpassword!=null && cmd == "r99")
-		{
-			$scope.cloudstatus="Connecting...";
-			json.RA.cloudstatus="Connecting...";
-			MQTTconnect();
-			return;
-		}
+		if (cmd == "r99" && MQTTconnect($scope)) return;
 		
 		modal.show();
 		var tempurl;
@@ -239,6 +122,7 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 			timeout: 3000
 		});
 		request.success(function(data){
+			attempts=0;
 			console.log(data);
 			modal.hide();
 			if (cmd.substring(0,1)=='r')
@@ -256,9 +140,9 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 				if (statusindex==8) tabbar.loadPage('dimmingoverride.html');
 			}
 			if (cmd=='v')
-				ons.notification.alert({message: 'Version: ' + data.replace('<V>','').replace('</V>',''), title: 'Reef Angel Controller' });
+				ons.notification.alert({message: 'Version: ' + data.replace('<V>','').replace('</V>',''), title: 'Reef Angel Controller'});
 			if (cmd=='boot' || cmd=='mf' || cmd=='mw' || cmd=='bp' || cmd=='l1' || cmd=='l0' || cmd=='mt' || cmd=='mo' || cmd=='ml' || cmd=='cal0' || cmd=='cal1' || cmd=='cal2' || cmd=='cal3' || cmd=='cal4')
-				ons.notification.alert({message: 'Command result: ' + data.replace('<MODE>','').replace('</MODE>',''), title: 'Reef Angel Controller' });
+				ons.notification.alert({message: 'Command result: ' + data.replace('<MODE>','').replace('</MODE>',''), title: 'Reef Angel Controller'});
 			if (cmd.substring(0,2)=='po')
 			{
 				if (data.search("Ok"))
@@ -311,14 +195,160 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 				memoryraw = data.replace('<MEM>','').replace('</MEM>','');
 				$rootScope.$broadcast('msg', 'memoryrawok');
 			}
+			if (cmd == 'd')
+			{
+				var x2js = new X2JS();
+				var jsonDateTime = x2js.xml_str2json(data.slice(0, data.lastIndexOf('>') + 1));
+				var dateTime = new Date(jsonDateTime.D.YR, jsonDateTime.D.MON - 1, jsonDateTime.D.DAY, jsonDateTime.D.HR, jsonDateTime.D.MIN).toLocaleString();
+				ons.notification.alert({message: 'Controller time: ' + dateTime, title: 'Reef Angel Controller'});
+			}
 		});
-		request.error(function(data){
+		request.error(function(){
 			modal.hide();
-			ons.notification.alert({message: 'Unable to process controller data!'});
-		})
+			if (attempts < 1)
+			{
+				attempts++;
+				console.log('Unable to process controller data! Retry: ' + attempts);
+				$scope.getcontrollerdata(cmd);
+			}
+			else
+			{
+				attempts=0;
+				ons.notification.alert({message: 'Unable to process controller data!', title: 'Reef Angel Controller'});
+			}
+		});
 	}
+
+	getcontrollerdatacloud=function(cmd){
+		message=null;
+		switch (cmd) {
+			case "mf":
+				if ((json.RA.SF & 1<<2)==1<<2)
+					ons.notification.alert({message: 'Already in Water Change Mode', title: 'Reef Angel Controller' });
+				else
+					if ((json.RA.SF & 1<<1)==1<<1)
+						ons.notification.alert({message: 'Already in Feeding Mode', title: 'Reef Angel Controller' });
+					else
+						message = new Paho.MQTT.Message("mf:1");
+				break;
+			case "mw":
+				if ((json.RA.SF & 1<<1)==1<<1)
+					ons.notification.alert({message: 'Already in Feeding Mode', title: 'Reef Angel Controller' });
+				else
+					if ((json.RA.SF & 1<<2)==1<<2)
+						ons.notification.alert({message: 'Already in Water Change Mode', title: 'Reef Angel Controller' });
+					else
+						message = new Paho.MQTT.Message("mw:1");
+				break;
+			case "bp":
+				if ((json.RA.SF & 1<<1)==0 && (json.RA.SF & 1<<2)==0)
+					ons.notification.alert({message: 'Not in Feeding Mode nor Water Change Mode', title: 'Reef Angel Controller' });
+				if ((json.RA.SF & 1<<1)==1<<1)
+					message = new Paho.MQTT.Message("mf:0");
+				if ((json.RA.SF & 1<<2)==1<<2)
+					message = new Paho.MQTT.Message("mw:0");
+				break;
+			case "l0":
+				if ((json.RA.SF & 1<<0)==0)
+					ons.notification.alert({message: 'Lights on already cancelled', title: 'Reef Angel Controller' });
+				else
+					message = new Paho.MQTT.Message("l:0");
+				break;
+			case "l1":
+				if ((json.RA.SF & 1<<0)==1<<0)
+					ons.notification.alert({message: 'Already in Lights On', title: 'Reef Angel Controller' });
+				else
+					message = new Paho.MQTT.Message("l:1");
+				break;
+			case "mt":
+				if ((json.RA.AF & 1<<0)==0)
+					ons.notification.alert({message: 'No ATO Timeout flag', title: 'Reef Angel Controller' });
+				else
+					message = new Paho.MQTT.Message("mt:0");
+				break;
+			case "mo":
+				if ((json.RA.AF & 1<<0)==0)
+					ons.notification.alert({message: 'No Overheat flag', title: 'Reef Angel Controller' });
+				else
+					message = new Paho.MQTT.Message("mo:0");
+				break;
+			case "ml":
+				if ((json.RA.AF & 1<<0)==0)
+					ons.notification.alert({message: 'No Leak flag', title: 'Reef Angel Controller' });
+				else
+					message = new Paho.MQTT.Message("ml:0");
+				break;
+			case "boot":
+				message = new Paho.MQTT.Message("boot:0");
+				break;
+			case "v":
+				message = new Paho.MQTT.Message("v:0");
+				break;
+		}
+		if (cmd.substring(0,1)=='d')
+			message = new Paho.MQTT.Message("date:1:"+cmd.substring(1,13).split(",").join(""));
+		if (cmd.substring(0,4)=='cvar')
+		{
+			message = new Paho.MQTT.Message(cmd.replace("cvar","cvar:").replace(",",":"));
+			updatestring="C"+cmd.substring(4,5)+":";
+		}
+		if (cmd.substring(0,2)=='po')
+		{
+			message = new Paho.MQTT.Message(cmd.replace("po","po:").replace(",",":"));
+			updatestring=pwmchannels[cmd.substring(2,cmd.indexOf(","))] + "O:";
+		}
+		if (cmd.substring(0,2)=='mb')
+		{
+			message = new Paho.MQTT.Message(cmd.replace("mb","mb:").replace(",",":"));
+			if (cmd.substring(2,5)=='255')
+				updatestring="RFM:";
+			if (cmd.substring(2,5)=='256')
+				updatestring="RFS:";
+			if (cmd.substring(2,5)=='257')
+				updatestring="RFD:";
+			if (cmd.substring(2,5)=='337')
+				updatestring="DCM:";
+			if (cmd.substring(2,5)=='338')
+				updatestring="DCS:";
+			if (cmd.substring(2,5)=='339')
+				updatestring="DCD:";
+		}
+		if (cmd.substring(0,1)=='r' && cmd != "r99")
+		{
+			message = new Paho.MQTT.Message(cmd.replace("r","r:"));
+			if(cmd.substring(3,4)=='0')
+				updatestring="ROFF";
+			if(cmd.substring(3,4)=='1')
+				updatestring="RON";
+			if(cmd.substring(3,4)=='2')
+				updatestring="RON";
+			updatestring+=cmd.substring(1,2)+":";
+		}
+		if (cmd.substring(0,2)=='mr')
+		{
+			message = new Paho.MQTT.Message("mr:0");
+			updatestring="MR21:";
+		}
+		if (message!=null)
+		{
+			modal.show();
+			currenttimeout=$timeout;
+			ourtimer=$timeout(function() {
+				modal.hide();
+				ons.notification.alert({message: 'Timeout. Please try again.', title: 'Reef Angel Controller'});
+			}, 8000);
+			message.destinationName = cloudusername + "/in";
+			mqtt.send(message);
+		}
+	}
+
+	$scope.refresh=function(){
+		$scope.getcontrollerdata("r99");
+	}
+
 	$scope.getportallabels=function(){
-		if (json!=null)
+		var attempts=0;
+		if (json!=null && json.RA!=null)
 		{
 			modal.show();
 			var request=$http({
@@ -327,6 +357,7 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 				timeout: 3000
 			});
 			request.success(function(data){
+				attempts=0;
 				modal.hide();
 				var x2js = new X2JS();
 				jsonlabels = x2js.xml_str2json( data );
@@ -335,10 +366,19 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 				$localStorage.jsonlabelsarray[$localStorage.activecontrollerid]=jsonlabels;
 				$rootScope.$broadcast('msg', 'labels');
 			});
-			request.error(function(data){
+			request.error(function(){
 				modal.hide();
-				ons.notification.alert({message: 'Unable to process controller data!'});
-			})
+				if (attempts < 1)
+				{
+					attempts++;
+					$scope.getportallabels();
+				}
+				else
+				{
+					attempts=0;
+					ons.notification.alert({message: 'Unable to process controller data!', title: 'Reef Angel Controller'});
+				}
+			});
 		}
 	}
 	$scope.changerelay=function(id,mode){
@@ -388,34 +428,42 @@ app.controller('Parameters', function($rootScope, $scope, $timeout, $localStorag
 			loadlabels($scope);
 		}
 	});
+
 	$scope.loadparameterstab=function(){
 		tabbar.loadPage('parameters.html');
 		statusindex=0;
 	}
+
 	$scope.loadflagstab=function(){
 		tabbar.loadPage('flags.html');
 		statusindex=1;
 	}
+
 	$scope.loadiotab=function(){
 		tabbar.loadPage('io.html');
 		statusindex=2;
 	}
+
 	$scope.loaddimmingtab=function(){
 		tabbar.loadPage('dimming.html');
 		statusindex=3;
 	}
+
 	$scope.loadcustomvartab=function(){
 		tabbar.loadPage('customvar.html');
 		statusindex=4;
 	}
+
 	$scope.loadrftab=function(){
 		tabbar.loadPage('rf.html');
 		statusindex=5;
 	}
+
 	$scope.loaddcpumptab=function(){
 		tabbar.loadPage('dcpump.html');
 		statusindex=6;
 	}
+
 	$scope.dimmingoverride=function(channel){
 		tabbar.loadPage('dimmingoverride.html');
 		channeloverride=channel;
@@ -424,14 +472,17 @@ app.controller('Parameters', function($rootScope, $scope, $timeout, $localStorag
 		else if (channel>10 && channel<17)
 			statusindex=8;
 	}
+
 	$scope.overridechange=function(){
 		$scope.pwmoverride=$scope.dimmingoverridechange;
 	}
+
 	$scope.backoverride=function(){
 		if (statusindex==3 || statusindex==7) tabbar.loadPage('dimming.html');
 		if (statusindex==5 || statusindex==8) tabbar.loadPage('rf.html');
 		if (statusindex==6) tabbar.loadPage('dcpump.html');
 	}
+
 	$scope.setoverride=function(){
 		if (channeloverride<8 || channeloverride==17 || channeloverride==18)
 			statusindex=3;
@@ -439,6 +490,7 @@ app.controller('Parameters', function($rootScope, $scope, $timeout, $localStorag
 			statusindex=5;
 		$scope.getcontrollerdata('po'+channeloverride+','+$scope.dimmingoverridechange);
 	}
+
 	$scope.canceloverride=function(){
 		if (channeloverride<8 || channeloverride==17 || channeloverride==18)
 			statusindex=3;
@@ -446,68 +498,85 @@ app.controller('Parameters', function($rootScope, $scope, $timeout, $localStorag
 			statusindex=5;
 		$scope.getcontrollerdata('po'+channeloverride+',255');
 	}
+
 	$scope.cvarupdate=function(channel){
 		tabbar.loadPage('cvarupdate.html');
 		cvarupdateindex=channel;
 	}
+
 	$scope.setcvarupdate=function(){
 		$scope.getcontrollerdata('cvar'+cvarupdateindex+','+$scope.cvarupdatechange);
 	}
+
 	$scope.backcvarupdate=function(){
 		tabbar.loadPage('customvar.html');
 	}
+
 	$scope.rfmodeupdate=function(channel){
 		tabbar.loadPage('rfmodeupdate.html');
 	}
+
 	$scope.setrfmodeupdate=function(mode){
 		$scope.getcontrollerdata('mb255,'+mode);
 	}
+
 	$scope.backrfupdate=function(){
 		tabbar.loadPage('rf.html');
 	}
+
 	$scope.dcmodeupdate=function(){
 		tabbar.loadPage('dcmodeupdate.html');
 	}
+
 	$scope.setdcmodeupdate=function(mode){
 		$scope.getcontrollerdata('mb337,'+mode);
 	}
+
 	$scope.backdcupdate=function(){
 		tabbar.loadPage('dcpump.html');
 	}
+
 	$scope.rfspeedupdate=function(channel){
 		$scope.speedupdatechange=$scope.rfs;
 		statusindex=8;
 		tabbar.loadPage('speedupdate.html');
 	}
+
 	$scope.rfdurationupdate=function(channel){
 		$scope.durationupdatechange=$scope.rfd;
 		statusindex=8;
 		tabbar.loadPage('durationupdate.html');
 	}
+
 	$scope.setspeedupdate=function(){
 		if (statusindex==6)	$scope.getcontrollerdata('mb338,'+$scope.speedupdatechange);
 		if (statusindex==8)	$scope.getcontrollerdata('mb256,'+$scope.speedupdatechange);
 	}
+
 	$scope.dcspeedupdate=function(channel){
 		$scope.speedupdatechange=$scope.dcs;
 		statusindex=6;
 		tabbar.loadPage('speedupdate.html');
 	}
+
 	$scope.dcdurationupdate=function(channel){
 		$scope.durationupdatechange=$scope.dcd;
 		statusindex=6;
 		tabbar.loadPage('durationupdate.html');
 	}
+
 	$scope.setdurationupdate=function(){
 		if (statusindex==6)	$scope.getcontrollerdata('mb339,'+$scope.durationupdatechange);
 		if (statusindex==8)	$scope.getcontrollerdata('mb257,'+$scope.durationupdatechange);
 	}
+
 	$scope.invokegraph=function(id){
 		names = [];
 		names.push(id);
 		tabbar.loadPage("singlegraph.html");
 		CreateChart($scope,"paramscontainer");
 	}
+
 	if (statusindex==7) $scope.dimmingtab=true;
 	if (statusindex==8) $scope.rftab=true;
 	if (statusindex==6) $scope.dctab=true;
@@ -524,7 +593,6 @@ app.controller('Parameters', function($rootScope, $scope, $timeout, $localStorag
 	console.log(json);
 	UpdateParams($scope,$timeout,$localStorage);
 });
-
 
 app.controller('Settings', function($rootScope, $scope, $timeout, $localStorage) {
 	$scope.$storage = $localStorage;
@@ -546,8 +614,8 @@ app.controller('Settings', function($rootScope, $scope, $timeout, $localStorage)
 		$scope.cloudusername=$localStorage.controllers[editcontrollerid].cloudusername;
 		$scope.cloudpassword=$localStorage.controllers[editcontrollerid].cloudpassword;
 	}
+
 	$scope.saveaddcontroller=function(){
-		
 		if (editcontrollerid==null)
 		{
 			$localStorage.controllers.push({
@@ -587,21 +655,26 @@ app.controller('Settings', function($rootScope, $scope, $timeout, $localStorage)
 		loaddefaultlabels();
 		$scope.loadcontrollertab();
 	}
+
 	$scope.loadcontrollertab=function(){
 		editcontrollerid=null;
 		tabbar.loadPage('settings.html');
 	}
+
 	$scope.loadinternalmemorytab=function(){
 		tabbar.loadPage('internalmemory.html');
 		$scope.getcontrollerdata('mr');
 	}
+
 	$scope.addcontroller=function(){
 		tabbar.loadPage('addcontroller.html');
 	}
+
 	$scope.editcontroller=function(id){
 		editcontrollerid=id;
 		tabbar.loadPage('addcontroller.html');
 	}
+
 	$scope.deletecontroller=function(id){
 		ons.notification.confirm({
 		  message: 'Are you sure you want to delete ' + $localStorage.controllers[id].name + " controller?",
@@ -674,14 +747,17 @@ app.controller('Relay', function($rootScope, $scope, $timeout, $localStorage) {
 			UpdateParams($scope,$timeout,$localStorage);
 		}
 	});
+
 	$scope.loadmaintab=function(){
 		console.log("main relay box");
 	}
+
 	$scope.loadexp1tab=function(){
 		$localStorage.exp1tab=true;
 		console.log("exp1 relay box");
 		
 	}
+
 	UpdateParams($scope,$timeout,$localStorage);
 });
 
@@ -700,6 +776,7 @@ app.controller('Graph', function($rootScope, $scope, $http, $timeout, $localStor
 			UpdateParams($scope,$timeout,$localStorage);
 		}
 	});
+
 	$scope.buildgraph=function(){
 		names = [];
 		if ($scope.grapht1==true) names.push("T1");
@@ -771,6 +848,7 @@ app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $
 			$scope.pwmslopestarta=getbytevalue(memoryraw,52);
 			$scope.pwmslopeenda=getbytevalue(memoryraw,53);
 			$scope.pwmslopedurationa=getbytevalue(memoryraw,54);
+			$scope.feedingtimer=getintvalue(memoryraw,14);
 			m=58;
 			$scope.pwmslopestart=[];
 			$scope.pwmslopeend=[];
@@ -783,28 +861,34 @@ app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $
 			}
 		}
 	});
+
 	$scope.loadinternalmemorytab=function(){
 		$scope.showim=true;
 		$scope.getcontrollerdata('mr');
 		$scope.memoryresult="";
 		memoryraw="";
 	}
+
 	$scope.loadcontrollertab=function(){
 		editcontrollerid=null;
 		tabbar.loadPage('settings.html');
 	}
+
 	$scope.toggleGroup = function(group){
 		if ($scope.isGroupShown(group)) 
 			$scope.shownGroup = null;
 		else
 			$scope.shownGroup = group;
 	};
+
 	$scope.isGroupShown = function(group) {
 		return $scope.shownGroup === group;
 	};
+
 	$scope.memback = function(group) {
 		$scope.getcontrollerdata('mr');
 	};
+
 	$scope.memsave = function(group) {
 		MemString=[]; 
 		MemURL=[];
@@ -876,6 +960,8 @@ app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $
 			SaveMemory("Low Water Level", "mb331," + $scope.waterlevellow);
 		if ($scope.waterlevelhigh!=getbytevalue(memoryraw,132))			
 			SaveMemory("High Water Level", "mb332," + $scope.waterlevelhigh);
+		if ($scope.feedingtimer!=getintvalue(memoryraw,14))			
+			SaveMemory("Feeding Timer", "mi214," + $scope.feedingtimer);
 		m=58;
 		for (a=0;a<6;a++)
 		{
@@ -912,6 +998,7 @@ app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $
 	};
 	
 	$scope.updatecontrollermemory=function(cmd){
+		var attempts=0;
 		console.log(cmd);
 		if (mqtt!=null )
 		{
@@ -926,6 +1013,7 @@ app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $
 				timeout: 3000
 			});
 			request.success(function(data){
+				attempts=0;
 				console.log(data);
 				if (data.indexOf("OK")>0)
 					$scope.memoryresult+=": OK\n";
@@ -945,10 +1033,19 @@ app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $
 				}
 	
 			});
-			request.error(function(data){
+			request.error(function(){
 				modal.hide();
-				ons.notification.alert({message: 'Unable to process controller data!'});
-			})
+				if (attempts < 1)
+				{
+					attempts++;
+					$scope.updatecontrollermemory(cmd);
+				}
+				else
+				{
+					attempts=0;
+					ons.notification.alert({message: 'Unable to process controller data!', title: 'Reef Angel Controller'});
+				}
+			});
 		}
 	}
 });
@@ -971,15 +1068,16 @@ function UpdateParams($scope,$timeout,$localStorage)
 			$scope.cloudenabled=true;
 			$scope.cloudstatus=json.RA.cloudstatus;
 		}
-		if (mqtt==null && cloudusername!=null && cloudpassword!=null)
-		{
-			$scope.cloudstatus="Connecting...";
-			json.RA.cloudstatus="Connecting...";
-			MQTTconnect();
-		}
+		MQTTconnect($scope);
 	}
-	if (json!=null)
+	if (json!=null && json.RA!=null)
 	{
+		if ((json.RA.SF & 1<<2)==1<<2)
+			$scope.mode="Water Change";
+		else if ((json.RA.SF & 1<<1)==1<<1)
+			$scope.mode="Feeding";
+		else
+			$scope.mode="Nominal";
 		if (json.RA.lastrefresh == null)
 			$scope.lastupdated="Never";
 		else
@@ -1206,12 +1304,12 @@ function UpdateParams($scope,$timeout,$localStorage)
 
 function CheckFlags($scope)
 {
-	$scope.alertnoflag=!(json.RA.AF>0 || json.RA.SF>0);
 	$scope.alertato=((json.RA.AF & 1) == 1);
 	$scope.alertoverheat=((json.RA.AF & 2) == 2);
 	$scope.alertbuslock=((json.RA.AF & 4) == 4);
 	$scope.alertleak=((json.RA.AF & 8) == 8);
 	$scope.alertlightson=((json.RA.SF & 1) == 1);
+	$scope.alertnoflag=!(json.RA.AF>0 || $scope.alertlightson);
 }
 
 function CheckIO($scope)
@@ -1487,65 +1585,66 @@ function CheckRelay($scope)
 
 function loaddefaultlabels()
 {
-	if (jsonlabels==null) jsonlabels=new Object();
-	if (jsonlabels.RA==null) jsonlabels.RA=new Object();
-	jsonlabels.RA.T1N = "Temp 1";
-	jsonlabels.RA.T2N = "Temp 2";
-	jsonlabels.RA.T3N = "Temp 3";
-	jsonlabels.RA.PHN = "pH";
-	jsonlabels.RA.ATOHIGHN = "ATO High";
-	jsonlabels.RA.ATOLOWN = "ATO Low";
-	jsonlabels.RA.PWMD1N = "Daylight Channel";
-	jsonlabels.RA.PWMA1N = "Actinic Channel";
-	jsonlabels.RA.ALARMN = "Alarm";
-	jsonlabels.RA.LEAKN = "Leak";
-	jsonlabels.RA.PWMD2N = "Daylight Channel 2";
-	jsonlabels.RA.PWMA2N = "Actinic Channel 2";
-	jsonlabels.RA.PWME0N = "Dimming Channel 0";
-	jsonlabels.RA.PWME1N = "Dimming Channel 1";
-	jsonlabels.RA.PWME2N = "Dimming Channel 2";
-	jsonlabels.RA.PWME3N = "Dimming Channel 3";
-	jsonlabels.RA.PWME4N = "Dimming Channel 4";
-	jsonlabels.RA.PWME5N = "Dimming Channel 5";
-	jsonlabels.RA.C0N = "Custom Var 0:";
-	jsonlabels.RA.C1N = "Custom Var 1:";
-	jsonlabels.RA.C2N = "Custom Var 2:";
-	jsonlabels.RA.C3N = "Custom Var 3:";
-	jsonlabels.RA.C4N = "Custom Var 4:";
-	jsonlabels.RA.C5N = "Custom Var 5:";
-	jsonlabels.RA.C6N = "Custom Var 6:";
-	jsonlabels.RA.C7N = "Custom Var 7:";
-	jsonlabels.RA.RFWN = "White Channel";
-	jsonlabels.RA.RFRBN = "Royal Blue Channel";
-	jsonlabels.RA.RFRN = "Red Channel";
-	jsonlabels.RA.RFGN = "Green Channel";
-	jsonlabels.RA.RFBN = "Blue Channel";
-	jsonlabels.RA.RFIN = "Intensity Channel";
-	jsonlabels.RA.SALN = "Salinity";
-	jsonlabels.RA.ORPN = "ORP";
-	jsonlabels.RA.PHEN = "pH Expansion";
-	jsonlabels.RA.WLN = "Water Level";
-	jsonlabels.RA.WL1N = "Water Level 1";
-	jsonlabels.RA.WL2N = "Water Level 2";
-	jsonlabels.RA.WL3N = "Water Level 3";
-	jsonlabels.RA.WL4N = "Water Level 4";
-	jsonlabels.RA.HUMN = "Humidity";
-	jsonlabels.RA.PARN = "PAR";
-	jsonlabels.RA.IO0N = "I/O Channel 0";
-	jsonlabels.RA.IO1N = "I/O Channel 1";
-	jsonlabels.RA.IO2N = "I/O Channel 2";
-	jsonlabels.RA.IO3N = "I/O Channel 3";
-	jsonlabels.RA.IO4N = "I/O Channel 4";
-	jsonlabels.RA.IO5N = "I/O Channel 5";
+	if (jsondefaultlabels==null) jsondefaultlabels=new Object();
+	if (jsondefaultlabels.RA==null) jsondefaultlabels.RA=new Object();
+	jsondefaultlabels.RA.T1N = "Temp 1";
+	jsondefaultlabels.RA.T2N = "Temp 2";
+	jsondefaultlabels.RA.T3N = "Temp 3";
+	jsondefaultlabels.RA.PHN = "pH";
+	jsondefaultlabels.RA.ATOHIGHN = "ATO High";
+	jsondefaultlabels.RA.ATOLOWN = "ATO Low";
+	jsondefaultlabels.RA.PWMD1N = "Daylight Channel";
+	jsondefaultlabels.RA.PWMA1N = "Actinic Channel";
+	jsondefaultlabels.RA.ALARMN = "Alarm";
+	jsondefaultlabels.RA.LEAKN = "Leak";
+	jsondefaultlabels.RA.PWMD2N = "Daylight Channel 2";
+	jsondefaultlabels.RA.PWMA2N = "Actinic Channel 2";
+	jsondefaultlabels.RA.PWME0N = "Dimming Channel 0";
+	jsondefaultlabels.RA.PWME1N = "Dimming Channel 1";
+	jsondefaultlabels.RA.PWME2N = "Dimming Channel 2";
+	jsondefaultlabels.RA.PWME3N = "Dimming Channel 3";
+	jsondefaultlabels.RA.PWME4N = "Dimming Channel 4";
+	jsondefaultlabels.RA.PWME5N = "Dimming Channel 5";
+	jsondefaultlabels.RA.C0N = "Custom Var 0:";
+	jsondefaultlabels.RA.C1N = "Custom Var 1:";
+	jsondefaultlabels.RA.C2N = "Custom Var 2:";
+	jsondefaultlabels.RA.C3N = "Custom Var 3:";
+	jsondefaultlabels.RA.C4N = "Custom Var 4:";
+	jsondefaultlabels.RA.C5N = "Custom Var 5:";
+	jsondefaultlabels.RA.C6N = "Custom Var 6:";
+	jsondefaultlabels.RA.C7N = "Custom Var 7:";
+	jsondefaultlabels.RA.RFWN = "White Channel";
+	jsondefaultlabels.RA.RFRBN = "Royal Blue Channel";
+	jsondefaultlabels.RA.RFRN = "Red Channel";
+	jsondefaultlabels.RA.RFGN = "Green Channel";
+	jsondefaultlabels.RA.RFBN = "Blue Channel";
+	jsondefaultlabels.RA.RFIN = "Intensity Channel";
+	jsondefaultlabels.RA.SALN = "Salinity";
+	jsondefaultlabels.RA.ORPN = "ORP";
+	jsondefaultlabels.RA.PHEN = "pH Expansion";
+	jsondefaultlabels.RA.WLN = "Water Level";
+	jsondefaultlabels.RA.WL1N = "Water Level 1";
+	jsondefaultlabels.RA.WL2N = "Water Level 2";
+	jsondefaultlabels.RA.WL3N = "Water Level 3";
+	jsondefaultlabels.RA.WL4N = "Water Level 4";
+	jsondefaultlabels.RA.HUMN = "Humidity";
+	jsondefaultlabels.RA.PARN = "PAR";
+	jsondefaultlabels.RA.IO0N = "I/O Channel 0";
+	jsondefaultlabels.RA.IO1N = "I/O Channel 1";
+	jsondefaultlabels.RA.IO2N = "I/O Channel 2";
+	jsondefaultlabels.RA.IO3N = "I/O Channel 3";
+	jsondefaultlabels.RA.IO4N = "I/O Channel 4";
+	jsondefaultlabels.RA.IO5N = "I/O Channel 5";
 	for (a=1;a<=8;a++)
 	{
-		jsonlabels.RA["R"+a+"N" ]= "Relay " + a;
+		jsondefaultlabels.RA["R"+a+"N" ]= "Relay " + a;
 		for (b=1;b<=8;b++)
 		{
-			jsonlabels.RA["R"+a+b+"N"] = "Relay " + a + b;
+			jsondefaultlabels.RA["R"+a+b+"N"] = "Relay " + a + b;
 		}
 	}
 }
+
 function loaddefaultvalues()
 {
 	if (json==null) json=new Object();
@@ -1603,63 +1702,70 @@ function loaddefaultvalues()
 function loadlabels($scope) {
 	if (jsonlabels!=null)
 	{
-		$scope.t1n=jsonlabels.RA.T1N;
-		$scope.t2n=jsonlabels.RA.T2N;
-		$scope.t3n=jsonlabels.RA.T3N;
-		$scope.phn=jsonlabels.RA.PHN;
-		$scope.saln=jsonlabels.RA.SALN;
-		$scope.orpn=jsonlabels.RA.ORPN;
-		$scope.phen=jsonlabels.RA.PHEN;
-		$scope.humn=jsonlabels.RA.HUMN;
-		$scope.parn=jsonlabels.RA.PARN;
-		$scope.wln=jsonlabels.RA.WLN;
-		$scope.wl1n=jsonlabels.RA.WL1N;
-		$scope.wl2n=jsonlabels.RA.WL2N;
-		$scope.wl3n=jsonlabels.RA.WL3N;
-		$scope.wl4n=jsonlabels.RA.WL4N;
-		$scope.atohighn=jsonlabels.RA.ATOHIGHN;
-		$scope.atolown=jsonlabels.RA.ATOLOWN;
-		$scope.pwmd1n=jsonlabels.RA.PWMD1N;
-		$scope.pwma1n=jsonlabels.RA.PWMA1N;
-		$scope.alarmn=jsonlabels.RA.ALARMN;
-		$scope.leakn=jsonlabels.RA.LEAKN;
-		$scope.pwmd2n=jsonlabels.RA.PWMD2N;
-		$scope.pwma2n=jsonlabels.RA.PWMA2N;
-		$scope.pwme0n=jsonlabels.RA.PWME0N;
-		$scope.pwme1n=jsonlabels.RA.PWME1N;
-		$scope.pwme2n=jsonlabels.RA.PWME2N;
-		$scope.pwme3n=jsonlabels.RA.PWME3N;
-		$scope.pwme4n=jsonlabels.RA.PWME4N;
-		$scope.pwme5n=jsonlabels.RA.PWME5N;
-		$scope.c0n=jsonlabels.RA.C0N;
-		$scope.c1n=jsonlabels.RA.C1N;
-		$scope.c2n=jsonlabels.RA.C2N;
-		$scope.c3n=jsonlabels.RA.C3N;
-		$scope.c4n=jsonlabels.RA.C4N;
-		$scope.c5n=jsonlabels.RA.C5N;
-		$scope.c6n=jsonlabels.RA.C6N;
-		$scope.c7n=jsonlabels.RA.C7N;
-		$scope.rfwn=jsonlabels.RA.RFWN;
-		$scope.rfrbn=jsonlabels.RA.RFRBN;
-		$scope.rfrn=jsonlabels.RA.RFRN;
-		$scope.rfgn=jsonlabels.RA.RFGN;
-		$scope.rfbn=jsonlabels.RA.RFBN;
-		$scope.rfin=jsonlabels.RA.RFIN;
-		$scope.io0n=jsonlabels.RA.IO0N;
-		$scope.io1n=jsonlabels.RA.IO1N;
-		$scope.io2n=jsonlabels.RA.IO2N;
-		$scope.io3n=jsonlabels.RA.IO3N;
-		$scope.io4n=jsonlabels.RA.IO4N;
-		$scope.io5n=jsonlabels.RA.IO5N;
+		$scope.t1n=ifNull(jsonlabels.RA.T1N, jsondefaultlabels.RA.T1N);
+		$scope.t2n=ifNull(jsonlabels.RA.T2N, jsondefaultlabels.RA.T2N);
+		$scope.t3n=ifNull(jsonlabels.RA.T3N, jsondefaultlabels.RA.T3N);
+		$scope.phn=ifNull(jsonlabels.RA.PHN, jsondefaultlabels.RA.PHN);
+		$scope.saln=ifNull(jsonlabels.RA.SALN, jsondefaultlabels.RA.SALN);
+		$scope.orpn=ifNull(jsonlabels.RA.ORPN, jsondefaultlabels.RA.ORPN);
+		$scope.phen=ifNull(jsonlabels.RA.PHEN, jsondefaultlabels.RA.PHEN);
+		$scope.humn=ifNull(jsonlabels.RA.HUMN, jsondefaultlabels.RA.HUMN);
+		$scope.parn=ifNull(jsonlabels.RA.PARN, jsondefaultlabels.RA.PARN);
+		$scope.wln=ifNull(jsonlabels.RA.WLN, jsondefaultlabels.RA.WLN);
+		$scope.wl1n=ifNull(jsonlabels.RA.WL1N, jsondefaultlabels.RA.WL1N);
+		$scope.wl2n=ifNull(jsonlabels.RA.WL2N, jsondefaultlabels.RA.WL2N);
+		$scope.wl3n=ifNull(jsonlabels.RA.WL3N, jsondefaultlabels.RA.WL3N);
+		$scope.wl4n=ifNull(jsonlabels.RA.WL4N, jsondefaultlabels.RA.WL4N);
+		$scope.atohighn=ifNull(jsonlabels.RA.ATOHIGHN, jsondefaultlabels.RA.ATOHIGHN);
+		$scope.atolown=ifNull(jsonlabels.RA.ATOLOWN, jsondefaultlabels.RA.ATOLOWN);
+		$scope.pwmd1n=ifNull(jsonlabels.RA.PWMD1N, jsondefaultlabels.RA.PWMD1N);
+		$scope.pwma1n=ifNull(jsonlabels.RA.PWMA1N, jsondefaultlabels.RA.PWMA1N);
+		$scope.alarmn=ifNull(jsonlabels.RA.ALARMN, jsondefaultlabels.RA.ALARMN);
+		$scope.leakn=ifNull(jsonlabels.RA.LEAKN, jsondefaultlabels.RA.LEAKN);
+		$scope.pwmd2n=ifNull(jsonlabels.RA.PWMD2N, jsondefaultlabels.RA.PWMD2N);
+		$scope.pwma2n=ifNull(jsonlabels.RA.PWMA2N, jsondefaultlabels.RA.PWMA2N);
+		$scope.pwme0n=ifNull(jsonlabels.RA.PWME0N, jsondefaultlabels.RA.PWME0N);
+		$scope.pwme1n=ifNull(jsonlabels.RA.PWME1N, jsondefaultlabels.RA.PWME1N);
+		$scope.pwme2n=ifNull(jsonlabels.RA.PWME2N, jsondefaultlabels.RA.PWME2N);
+		$scope.pwme3n=ifNull(jsonlabels.RA.PWME3N, jsondefaultlabels.RA.PWME3N);
+		$scope.pwme4n=ifNull(jsonlabels.RA.PWME4N, jsondefaultlabels.RA.PWME4N);
+		$scope.pwme5n=ifNull(jsonlabels.RA.PWME5N, jsondefaultlabels.RA.PWME5N);
+		$scope.c0n=ifNull(jsonlabels.RA.C0N, jsondefaultlabels.RA.C0N);
+		$scope.c1n=ifNull(jsonlabels.RA.C1N, jsondefaultlabels.RA.C1N);
+		$scope.c2n=ifNull(jsonlabels.RA.C2N, jsondefaultlabels.RA.C2N);
+		$scope.c3n=ifNull(jsonlabels.RA.C3N, jsondefaultlabels.RA.C3N);
+		$scope.c4n=ifNull(jsonlabels.RA.C4N, jsondefaultlabels.RA.C4N);
+		$scope.c5n=ifNull(jsonlabels.RA.C5N, jsondefaultlabels.RA.C5N);
+		$scope.c6n=ifNull(jsonlabels.RA.C6N, jsondefaultlabels.RA.C6N);
+		$scope.c7n=ifNull(jsonlabels.RA.C7N, jsondefaultlabels.RA.C7N);
+		$scope.rfwn=ifNull(jsonlabels.RA.RFWN, jsondefaultlabels.RA.RFWN);
+		$scope.rfrbn=ifNull(jsonlabels.RA.RFRBN, jsondefaultlabels.RA.RFRBN);
+		$scope.rfrn=ifNull(jsonlabels.RA.RFRN, jsondefaultlabels.RA.RFRN);
+		$scope.rfgn=ifNull(jsonlabels.RA.RFGN, jsondefaultlabels.RA.RFGN);
+		$scope.rfbn=ifNull(jsonlabels.RA.RFBN, jsondefaultlabels.RA.RFBN);
+		$scope.rfin=ifNull(jsonlabels.RA.RFIN, jsondefaultlabels.RA.RFIN);
+		$scope.io0n=ifNull(jsonlabels.RA.IO0N, jsondefaultlabels.RA.IO0N);
+		$scope.io1n=ifNull(jsonlabels.RA.IO1N, jsondefaultlabels.RA.IO1N);
+		$scope.io2n=ifNull(jsonlabels.RA.IO2N, jsondefaultlabels.RA.IO2N);
+		$scope.io3n=ifNull(jsonlabels.RA.IO3N, jsondefaultlabels.RA.IO3N);
+		$scope.io4n=ifNull(jsonlabels.RA.IO4N, jsondefaultlabels.RA.IO4N);
+		$scope.io5n=ifNull(jsonlabels.RA.IO5N, jsondefaultlabels.RA.IO5N);
 		for (a=1; a<=8; a++)
 		{
-			$scope["r"+a+"n"]=jsonlabels.RA["R"+a+"N"];
+			$scope["r"+a+"n"]=ifNull(jsonlabels.RA["R"+a+"N"], jsondefaultlabels.RA["R"+a+"N"]);
 			for (b=1; b<=8; b++)
 			{
-				$scope["r"+a+b+"n"]=jsonlabels.RA["R"+a+b+"N"];
+				$scope["r"+a+b+"n"]=ifNull(jsonlabels.RA["R"+a+b+"N"], jsondefaultlabels.RA["R"+a+b+"N"]);
 			}
 		}
 	}
+}
+
+function ifNull(condition, other) {
+	if (condition && condition != "null")
+		return condition;
+	else
+		return other;
 }
 
 function setjson(id, value) {
@@ -1688,13 +1794,7 @@ function changeactivecontroller($scope, $localStorage, $rootScope, id)
 	MQTTdisconnect();
 	$rootScope.$broadcast('msg', 'paramsok');
 	$rootScope.$broadcast('msg', 'popoverclose');
-	if (mqtt==null && cloudusername!=null && cloudpassword!=null)
-	{
-		$scope.cloudstatus="Connecting...";
-		json.RA.cloudstatus="Connecting...";
-		MQTTconnect();
-		return;
-	}
+	MQTTconnect($scope);
 }
 
 // create the chart when all data is loaded
@@ -1979,7 +2079,11 @@ function SaveMQTTMemory(cmd)
 	}
 }
 
-function MQTTconnect() {
+function MQTTconnect($scope) {
+	if (!(mqtt==null && cloudusername!=null && cloudpassword!=null)) return false;
+	$scope.cloudstatus="Connecting...";
+	if (json!=null && json.RA!=null)
+		json.RA.cloudstatus="Connecting...";
 	console.log("Connecting...");
 	mqtt = new Paho.MQTT.Client(
 					"forum.reefangel.com",
@@ -1997,9 +2101,8 @@ function MQTTconnect() {
 			{
 				parametersscope.cloudstatus="Disconnected";
 				relayscope.cloudstatus="Disconnected";
-				if (json!=null)
-					if (json.RA!=null)
-						json.RA.cloudstatus="Disconnected";
+				if (json!=null && json.RA!=null)
+					json.RA.cloudstatus="Disconnected";
 			}
 			mqtt=null;
 		}
@@ -2011,6 +2114,7 @@ function MQTTconnect() {
 	options.userName = cloudusername;
 	options.password = cloudpassword;
 	mqtt.connect(options);
+	return true;
 }
 
 function MQTTdisconnect() {
@@ -2022,8 +2126,7 @@ function MQTTdisconnect() {
 function onConnect() {
 	parametersscope.cloudstatus="Connected";
 	relayscope.cloudstatus="Connected";
-	if (json!=null)
-		if (json.RA!=null)
+	if (json!=null && json.RA!=null)
 			json.RA.cloudstatus="Connected";
 	parametersscope.$apply();
 	mqtt.subscribe(cloudusername + "/out");
@@ -2039,9 +2142,8 @@ function onConnectionLost(response) {
 		parametersscope.cloudstatus="Disconnected";
 		relayscope.cloudstatus="Disconnected";
 		mqtt=null;
-		if (json!=null)
-			if (json.RA!=null)
-				json.RA.cloudstatus="Disconnected";
+		if (json!=null && json.RA!=null)
+			json.RA.cloudstatus="Disconnected";
 	}
 };
 

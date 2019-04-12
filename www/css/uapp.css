@@ -148,6 +148,11 @@ background-color: #fafafa;
 	background-color: #E9EEF0;
 }
 
+#alert {
+	background-color: indianred;
+	color: white;
+}
+
 .normalbutton{
     width:40%;
     padding-top:10px;    
