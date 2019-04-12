@@ -4,3 +4,5 @@ platforms/._.DS_Store
 jsconfig.json
 .vscode/plugins.json
 .vscode/typings/cordova/cordova.d.ts
+U-App-2.0.code-workspace
+typings/cordova-typings.d.ts
