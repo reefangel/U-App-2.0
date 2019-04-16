@@ -1,6 +1,11 @@
 <!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta name="HandheldFriendly" content="true" />
+<link rel="apple-touch-icon" href="images/icon.png" />
+<link rel="apple-touch-startup-image" href="" />
 <link rel="stylesheet" href="css/onsenui.css">
 <link rel="stylesheet" href="css/onsen-css-components.css">
 <link rel="stylesheet" href="css/uapp.css">
@@ -33,7 +38,7 @@
 </ons-navigator>
 <ons-template id="menu.html">
   <ons-list>
-    <ons-list-item>Reef Angel Uapp 2.0.4</ons-list-item>
+    <ons-list-item>Reef Angel Uapp 2.0.6</ons-list-item>
     <ons-list-item modifier="tapable" onclick="menu.toggleMenu()">Close<span class="list-item-action">
       <ons-icon icon="ion-close-circled" size="22px"></ons-icon>
       </span></ons-list-item>
@@ -142,6 +147,18 @@
       <div class="paramsbox">
         <div class="paramslabel">{{t3n}}</div>
         <div class="paramsvalue" ng-click="invokegraph('T3')">{{t3}}</div>
+      </div>
+      <div class="paramsbox" ng-if="extratempenabled">
+        <div class="paramslabel">{{t4n}}</div>
+        <div class="paramsvalue" ng-click="invokegraph('T4')">{{t4}}</div>
+      </div>
+      <div class="paramsbox" ng-if="extratempenabled">
+        <div class="paramslabel">{{t5n}}</div>
+        <div class="paramsvalue" ng-click="invokegraph('T5')">{{t5}}</div>
+      </div>
+      <div class="paramsbox" ng-if="extratempenabled">
+        <div class="paramslabel">{{t6n}}</div>
+        <div class="paramsvalue" ng-click="invokegraph('T6')">{{t6}}</div>
       </div>
       <div class="paramsbox">
         <div class="paramslabel">{{phn}}</div>

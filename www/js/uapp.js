@@ -22,7 +22,7 @@ var relayscope;
 var currentstorage;
 var ourtimer;
 var currenttimeout;
-var updatestring;
+var updatestring="";
 var internalmemoryrootscope
 var internalmemoryscope;
 var localserver;
@@ -99,19 +99,25 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 		ons.notification.alert({message: 'Forum username: ' + parametersscope.forumid, title: 'Reef Angel Controller'});
 	}
 
-	$scope.getcontrollerdata=function(cmd){
+	$scope.getcontrollerdata=function(cmd) {
 		if ($localStorage.controllers.length==0 && !localserver) return;
 		//console.log(cmd);
+		// This is a cloud request
 		if (mqtt!=null)
 		{
-			$scope.getcontrollerdatacloud(cmd);
+			getcontrollerdatacloud(cmd);
 			return;
 		}
+		// Check if we should try to connect to cloud
 		if (cmd == "r99" && MQTTconnect($scope)) return;
-		
+		// This is a non-cloud request
+		getcontrollerdatahttp(cmd);
+	}
+
+	getcontrollerdatahttp=function(cmd) {
 		modal.show();
 		var tempurl;
-		
+
 		if (localserver)
 			tempurl=document.referrer.replace("wifi","") + cmd;
 		else
@@ -193,6 +199,7 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 			if (cmd.substring(0,2)=='mr')
 			{
 				memoryraw = data.replace('<MEM>','').replace('</MEM>','');
+				memoryraw = memoryraw.split(" ").join("");
 				$rootScope.$broadcast('msg', 'memoryrawok');
 			}
 			if (cmd == 'd')
@@ -219,8 +226,9 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 		});
 	}
 
-	getcontrollerdatacloud=function(cmd){
+	getcontrollerdatacloud=function(cmd) {
 		message=null;
+		console.log(cmd);
 		switch (cmd) {
 			case "mf":
 				if ((json.RA.SF & 1<<2)==1<<2)
@@ -267,13 +275,13 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 					message = new Paho.MQTT.Message("mt:0");
 				break;
 			case "mo":
-				if ((json.RA.AF & 1<<0)==0)
+				if ((json.RA.AF & 1<<1)==0)
 					ons.notification.alert({message: 'No Overheat flag', title: 'Reef Angel Controller' });
 				else
 					message = new Paho.MQTT.Message("mo:0");
 				break;
 			case "ml":
-				if ((json.RA.AF & 1<<0)==0)
+				if ((json.RA.AF & 1<<3)==0)
 					ons.notification.alert({message: 'No Leak flag', title: 'Reef Angel Controller' });
 				else
 					message = new Paho.MQTT.Message("ml:0");
@@ -284,8 +292,11 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 			case "v":
 				message = new Paho.MQTT.Message("v:0");
 				break;
+			case "d":
+				message = new Paho.MQTT.Message("date:0");
+				break;
 		}
-		if (cmd.substring(0,1)=='d')
+		if (cmd != 'd' && cmd.substring(0,1)=='d')
 			message = new Paho.MQTT.Message("date:1:"+cmd.substring(1,13).split(",").join(""));
 		if (cmd.substring(0,4)=='cvar')
 		{
@@ -316,13 +327,21 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 		if (cmd.substring(0,1)=='r' && cmd != "r99")
 		{
 			message = new Paho.MQTT.Message(cmd.replace("r","r:"));
-			if(cmd.substring(3,4)=='0')
+			if(cmd.substring(cmd.length-1,cmd.length)=='0')
 				updatestring="ROFF";
-			if(cmd.substring(3,4)=='1')
+			if(cmd.substring(cmd.length-1,cmd.length)=='1')
 				updatestring="RON";
-			if(cmd.substring(3,4)=='2')
-				updatestring="RON";
-			updatestring+=cmd.substring(1,2)+":";
+			if(cmd.substring(cmd.length-1,cmd.length)=='2')
+			{
+				if (cmd.length==4)
+					updatestring="RON" + cmd.substring(1,2) + ":ROFF";
+				else
+					updatestring="RON:ROFF";
+			}
+			if (cmd.length==4)
+				updatestring+=cmd.substring(1,2)+":";
+			else
+				updatestring+=":";
 		}
 		if (cmd.substring(0,2)=='mr')
 		{
@@ -344,10 +363,10 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 
 	$scope.refresh=function(){
 		$scope.getcontrollerdata("r99");
+		UpdateParams($scope, $timeout, $localStorage);
 	}
 
 	$scope.getportallabels=function(){
-		var attempts=0;
 		if (json!=null && json.RA!=null)
 		{
 			modal.show();
@@ -401,7 +420,7 @@ app.controller('Parameters', function($rootScope, $scope, $timeout, $localStorag
 		if (msg=="paramsok")
 		{
 			UpdateParams($scope,$timeout,$localStorage);
-			
+
 		}
 		if (msg=="overrideok")
 		{
@@ -683,12 +702,12 @@ app.controller('Settings', function($rootScope, $scope, $timeout, $localStorage)
 			  case 1:
 			    MQTTdisconnect();
 				delete $localStorage.controllers[id];
-				$localStorage.controllers = $localStorage.controllers.filter(function(n){ return n != null }); 
+				$localStorage.controllers = $localStorage.controllers.filter(function(n){ return n != null });
 				delete $localStorage.jsonarray[id];
-				$localStorage.jsonarray = $localStorage.jsonarray.filter(function(n){ return n != null }); 
+				$localStorage.jsonarray = $localStorage.jsonarray.filter(function(n){ return n != null });
 				if ($localStorage.jsonarray==null) $localStorage.jsonarray=[];
 				delete $localStorage.jsonlabelsarray[id];
-				$localStorage.jsonlabelsarray = $localStorage.jsonlabelsarray.filter(function(n){ return n != null }); 
+				$localStorage.jsonlabelsarray = $localStorage.jsonlabelsarray.filter(function(n){ return n != null });
 				if ($localStorage.jsonlabelsarray==null) $localStorage.jsonlabelsarray=[];
 				if ($localStorage.controllers.length==0)
 				{
@@ -711,7 +730,7 @@ app.controller('Settings', function($rootScope, $scope, $timeout, $localStorage)
 				break;
 			}
 		  }
-		});		
+		});
 	}
 });
 
@@ -755,7 +774,6 @@ app.controller('Relay', function($rootScope, $scope, $timeout, $localStorage) {
 	$scope.loadexp1tab=function(){
 		$localStorage.exp1tab=true;
 		console.log("exp1 relay box");
-		
 	}
 
 	UpdateParams($scope,$timeout,$localStorage);
@@ -782,6 +800,9 @@ app.controller('Graph', function($rootScope, $scope, $http, $timeout, $localStor
 		if ($scope.grapht1==true) names.push("T1");
 		if ($scope.grapht2==true) names.push("T2");
 		if ($scope.grapht3==true) names.push("T3");
+		if ($scope.grapht4==true) names.push("T4");
+		if ($scope.grapht5==true) names.push("T5");
+		if ($scope.grapht6==true) names.push("T6");
 		if ($scope.graphph==true) names.push("PH");
 		if ($scope.graphsal==true) names.push("SAL");
 		if ($scope.graphorp==true) names.push("ORP");
@@ -807,20 +828,23 @@ app.controller('Graph', function($rootScope, $scope, $http, $timeout, $localStor
 });
 
 app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $localStorage){
+	var attempts=0;
 	$scope.$storage = $localStorage;
 	internalmemoryrootscope=$rootScope;
 	internalmemoryscope=$scope;
 	currenttimeout=$timeout;
 	$scope.showim=true;
-	$scope.dimmingexpansionenabled = ((json.RA.EM & 1) == 1);
+	CheckExpansion($scope);
 	memoryraw="";
 	$scope.$on('msg', function(event, msg) {
 		//console.log('Parameters'+msg);
 		if (msg=="memoryrawok")
 		{
+			memoryraw = memoryraw.split(" ").join("");
 			$scope.daylighton=new Date("01/01/01 " + getbytevalue(memoryraw,4).pad() + ":" + getbytevalue(memoryraw,5).pad());
 			$scope.daylightoff=new Date("01/01/01 " + getbytevalue(memoryraw,6).pad() + ":" + getbytevalue(memoryraw,7).pad());
 			$scope.daylightdelayed=getbytevalue(memoryraw,35);
+			console.log(memoryraw);
 			$scope.actinicoffset=getbytevalue(memoryraw,84);
 			$scope.heateron=parseFloat(getintvalue(memoryraw,22)/10);
 			$scope.heateroff=parseFloat(getintvalue(memoryraw,24)/10);
@@ -849,15 +873,26 @@ app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $
 			$scope.pwmslopeenda=getbytevalue(memoryraw,53);
 			$scope.pwmslopedurationa=getbytevalue(memoryraw,54);
 			$scope.feedingtimer=getintvalue(memoryraw,14);
-			m=58;
+			var pwmMemory=58;
 			$scope.pwmslopestart=[];
 			$scope.pwmslopeend=[];
 			$scope.pwmslopeduration=[];
-			for (a=0;a<6;a++)
+			for (var a=0;a<6;a++)
 			{
-				$scope.pwmslopestart[a]=getbytevalue(memoryraw,m++);
-				$scope.pwmslopeend[a]=getbytevalue(memoryraw,m++);
-				$scope.pwmslopeduration[a]=getbytevalue(memoryraw,m++);
+				$scope.pwmslopestart[a]=getbytevalue(memoryraw,pwmMemory++);
+				$scope.pwmslopeend[a]=getbytevalue(memoryraw,pwmMemory++);
+				$scope.pwmslopeduration[a]=getbytevalue(memoryraw,pwmMemory++);
+			}
+			var radionMemory=102;
+			$scope.radionslopestart=[];
+			$scope.radionslopeend=[];
+			$scope.radionslopeduration=[];
+			for (const channel of ['White','Royal Blue','Red','Green','Blue','Intensity'])
+			{
+				$scope.radionslopestart[channel]=getbytevalue(memoryraw,radionMemory++);
+				$scope.radionslopeend[channel]=getbytevalue(memoryraw,radionMemory++);
+				$scope.radionslopeduration[channel]=getbytevalue(memoryraw,radionMemory++);
+				console.log(channel + $scope.radionslopestart[channel]);
 			}
 		}
 	});
@@ -875,7 +910,7 @@ app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $
 	}
 
 	$scope.toggleGroup = function(group){
-		if ($scope.isGroupShown(group)) 
+		if ($scope.isGroupShown(group))
 			$scope.shownGroup = null;
 		else
 			$scope.shownGroup = group;
@@ -890,7 +925,7 @@ app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $
 	};
 
 	$scope.memsave = function(group) {
-		MemString=[]; 
+		MemString=[];
 		MemURL=[];
 		memindex=0;
 		$scope.memoryresult="";
@@ -942,47 +977,69 @@ app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $
 			SaveMemory("Dosing Pump 3 Interval", "mi334," + $scope.dp3interval);
 		if ($scope.dp3timer!=getbytevalue(memoryraw,133))
 			SaveMemory("Dosing Pump 3 Timer", "mb333," + $scope.dp3timer);
-		if ($scope.delayedon!=getbytevalue(memoryraw,120))			
+		if ($scope.delayedon!=getbytevalue(memoryraw,120))
 			SaveMemory("Delayed Start", "mb320," + $scope.delayedon);
-		if ($scope.pwmslopestartd!=getbytevalue(memoryraw,49))			
+		if ($scope.pwmslopestartd!=getbytevalue(memoryraw,49))
 			SaveMemory("Daylight Dimming Start %", "mb249," + $scope.pwmslopestartd);
-		if ($scope.pwmslopeendd!=getbytevalue(memoryraw,50))			
+		if ($scope.pwmslopeendd!=getbytevalue(memoryraw,50))
 			SaveMemory("Daylight Dimming End %", "mb250," + $scope.pwmslopeendd);
-		if ($scope.pwmslopedurationd!=getbytevalue(memoryraw,51))			
+		if ($scope.pwmslopedurationd!=getbytevalue(memoryraw,51))
 			SaveMemory("Daylight Dimming Duration", "mb251," + $scope.pwmslopedurationd);
-		if ($scope.pwmslopestarta!=getbytevalue(memoryraw,52))			
+		if ($scope.pwmslopestarta!=getbytevalue(memoryraw,52))
 			SaveMemory("Actinic Dimming Start %", "mb252," + $scope.pwmslopestarta);
-		if ($scope.pwmslopeenda!=getbytevalue(memoryraw,53))			
+		if ($scope.pwmslopeenda!=getbytevalue(memoryraw,53))
 			SaveMemory("Actinic Dimming End %", "mb253," + $scope.pwmslopeenda);
-		if ($scope.pwmslopedurationa!=getbytevalue(memoryraw,54))			
+		if ($scope.pwmslopedurationa!=getbytevalue(memoryraw,54))
 			SaveMemory("Actinic Dimming Duration", "mb254," + $scope.pwmslopedurationa);
-		if ($scope.waterlevellow!=getbytevalue(memoryraw,131))			
+		if ($scope.waterlevellow!=getbytevalue(memoryraw,131))
 			SaveMemory("Low Water Level", "mb331," + $scope.waterlevellow);
-		if ($scope.waterlevelhigh!=getbytevalue(memoryraw,132))			
+		if ($scope.waterlevelhigh!=getbytevalue(memoryraw,132))
 			SaveMemory("High Water Level", "mb332," + $scope.waterlevelhigh);
-		if ($scope.feedingtimer!=getintvalue(memoryraw,14))			
+		if ($scope.feedingtimer!=getintvalue(memoryraw,14))
 			SaveMemory("Feeding Timer", "mi214," + $scope.feedingtimer);
-		m=58;
+		var pwmMemory=58;
 		for (a=0;a<6;a++)
 		{
-			if ($scope.pwmslopestart[a]!=getbytevalue(memoryraw,m))
+			if ($scope.pwmslopestart[a]!=getbytevalue(memoryraw,pwmMemory))
 			{
-				t=200+m;
+				t=200+pwmMemory;
 				SaveMemory("Dimming Expansion Channel " + a + " Start %", "mb" + t + "," + $scope.pwmslopestart[a]);
 			}
-			m++;
-			if ($scope.pwmslopeend[a]!=getbytevalue(memoryraw,m))	
-			{		
-				t=200+m;
+			pwmMemory++;
+			if ($scope.pwmslopeend[a]!=getbytevalue(memoryraw,pwmMemory))
+			{
+				t=200+pwmMemory;
 				SaveMemory("Dimming Expansion Channel " + a + " End %", "mb" + t + "," + $scope.pwmslopeend[a]);
 			}
-			m++;
-			if ($scope.pwmslopeduration[a]!=getbytevalue(memoryraw,m))
-			{			
-				t=200+m;
+			pwmMemory++;
+			if ($scope.pwmslopeduration[a]!=getbytevalue(memoryraw,pwmMemory))
+			{
+				t=200+pwmMemory;
 				SaveMemory("Dimming Expansion Channel " + a + " Duration", "mb" + t + "," + $scope.pwmslopeduration[a]);
 			}
-			m++;
+			pwmMemory++;
+		}
+		var radionMemory=102;
+		for (const channel of ['White','Royal Blue','Red','Green','Blue','Intensity'])
+		{
+			if ($scope.radionslopestart[channel]!=getbytevalue(memoryraw,radionMemory))
+			{
+				t=200+radionMemory;
+				SaveMemory("Radion " + channel + " Channel Start %", "mb" + t + "," + $scope.radionslopestart[channel]);
+			}
+			radionMemory++;
+			if ($scope.radionslopeend[channel]!=getbytevalue(memoryraw,radionMemory))
+			{
+				t=200+radionMemory;
+				SaveMemory("Radion " + channel + " Channel End %", "mb" + t + "," + $scope.radionslopeend[channel]);
+			}
+			radionMemory++;
+			if ($scope.radionslopeduration[channel]!=getbytevalue(memoryraw,radionMemory))
+			{
+				t=200+radionMemory;
+				SaveMemory("Radion " + channel + " Channel Duration", "mb" + t + "," + $scope.radionslopeduration[channel]);
+			}
+			radionMemory++;
 		}
 		if (MemString.length>0)
 		{
@@ -996,9 +1053,8 @@ app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $
 			ons.notification.alert({message: 'Nothing to update.'});
 		}
 	};
-	
+
 	$scope.updatecontrollermemory=function(cmd){
-		var attempts=0;
 		console.log(cmd);
 		if (mqtt!=null )
 		{
@@ -1031,7 +1087,7 @@ app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $
 				{
 					modal.hide();
 				}
-	
+
 			});
 			request.error(function(){
 				modal.hide();
@@ -1089,6 +1145,9 @@ function UpdateParams($scope,$timeout,$localStorage)
 		$scope.t1 = (json.RA.T1/10).toFixed(1);
 		$scope.t2 = (json.RA.T2/10).toFixed(1);
 		$scope.t3 = (json.RA.T3/10).toFixed(1);
+		$scope.t4 = (json.RA.T4/10).toFixed(1);
+		$scope.t5 = (json.RA.T5/10).toFixed(1);
+		$scope.t6 = (json.RA.T6/10).toFixed(1);
 		$scope.ph = (json.RA.PH/100).toFixed(2);
 		if (json.RA.BID == 4)
 		{
@@ -1134,11 +1193,11 @@ function UpdateParams($scope,$timeout,$localStorage)
 		}
 		if ((json.RA.EM & 2) == 2)
 		{
-			$scope.rfm = rfmodes[json.RA.RFM];
+			$scope.rfm = rfmodes[parseInt(json.RA.RFM)];
 			$scope.rfs = json.RA.RFS;
 			$scope.rfd = json.RA.RFD;
-			$scope.rfmodecolor = rfmodecolors[json.RA.RFM];
-			$scope.rfimage = rfimages[json.RA.RFM];
+			$scope.rfmodecolor = rfmodecolors[parseInt(json.RA.RFM)];
+			$scope.rfimage = rfimages[parseInt(json.RA.RFM)];
 			$scope.rfw = json.RA.RFW;
 			$scope.rfrb = json.RA.RFRB;
 			$scope.rfr = json.RA.RFR;
@@ -1169,11 +1228,11 @@ function UpdateParams($scope,$timeout,$localStorage)
 			$scope.hum = json.RA.HUM;
 		if ((json.RA.EM1 & 2) == 2)
 		{
-			$scope.dcm = rfmodes[json.RA.DCM];
+			$scope.dcm = rfmodes[parseInt(json.RA.DCM)];
 			$scope.dcs = json.RA.DCS;
 			$scope.dcd = json.RA.DCD;
-			$scope.dcmodecolor = rfmodecolors[json.RA.DCM];
-			$scope.dcimage = rfimages[json.RA.DCM];
+			$scope.dcmodecolor = rfmodecolors[parseInt(json.RA.DCM)];
+			$scope.dcimage = rfimages[parseInt(json.RA.DCM)];
 		}
 		if ((json.RA.EM1 & 8) == 8)
 			$scope.par = json.RA.PAR;
@@ -1387,7 +1446,7 @@ function CheckDimmingOverride($scope)
 		$scope.pwma2class = "";
 		$scope.pwma2 = json.RA.PWMA2;
 	}
-	if (json.RA.PWME0O<=100) 
+	if (json.RA.PWME0O<=100)
 	{
 		$scope.pwme0class = "dimmingoverridehighlight";
 		$scope.pwme0 = json.RA.PWME0O;
@@ -1397,7 +1456,7 @@ function CheckDimmingOverride($scope)
 		$scope.pwme0class = "";
 		$scope.pwme0 = json.RA.PWME0;
 	}
-	if (json.RA.PWME1O<=100) 
+	if (json.RA.PWME1O<=100)
 	{
 		$scope.pwme1class = "dimmingoverridehighlight";
 		$scope.pwme1 = json.RA.PWME1O;
@@ -1407,7 +1466,7 @@ function CheckDimmingOverride($scope)
 		$scope.pwme1class = "";
 		$scope.pwme1 = json.RA.PWME1;
 	}
-	if (json.RA.PWME2O<=100) 
+	if (json.RA.PWME2O<=100)
 	{
 		$scope.pwme2class = "dimmingoverridehighlight";
 		$scope.pwme2 = json.RA.PWME2O;
@@ -1417,7 +1476,7 @@ function CheckDimmingOverride($scope)
 		$scope.pwme2class = "";
 		$scope.pwme2 = json.RA.PWME2;
 	}
-	if (json.RA.PWME3O<=100) 
+	if (json.RA.PWME3O<=100)
 	{
 		$scope.pwme3class = "dimmingoverridehighlight";
 		$scope.pwme3 = json.RA.PWME3O;
@@ -1427,7 +1486,7 @@ function CheckDimmingOverride($scope)
 		$scope.pwme3class = "";
 		$scope.pwme3 = json.RA.PWME3;
 	}
-	if (json.RA.PWME4O<=100) 
+	if (json.RA.PWME4O<=100)
 	{
 		$scope.pwme4class = "dimmingoverridehighlight";
 		$scope.pwme4 = json.RA.PWME4O;
@@ -1437,7 +1496,7 @@ function CheckDimmingOverride($scope)
 		$scope.pwme4class = "";
 		$scope.pwme4 = json.RA.PWME4;
 	}
-	if (json.RA.PWME5O<=100) 
+	if (json.RA.PWME5O<=100)
 	{
 		$scope.pwme5class = "dimmingoverridehighlight";
 		$scope.pwme5 = json.RA.PWME5O;
@@ -1471,7 +1530,7 @@ function CheckRadionOverride($scope)
 		$scope.rfrbclass = "";
 		$scope.rfrb = json.RA.RFRB;
 	}
-	if (json.RA.RFRO<=100) 
+	if (json.RA.RFRO<=100)
 	{
 		$scope.rfrclass = "dimmingoverridehighlight";
 		$scope.rfr = json.RA.RFRO;
@@ -1481,7 +1540,7 @@ function CheckRadionOverride($scope)
 		$scope.rfrclass = "";
 		$scope.rfr = json.RA.RFR;
 	}
-	if (json.RA.RFGO<=100) 
+	if (json.RA.RFGO<=100)
 	{
 		$scope.rfgclass = "dimmingoverridehighlight";
 		$scope.rfg = json.RA.RFGO;
@@ -1491,7 +1550,7 @@ function CheckRadionOverride($scope)
 		$scope.rfgclass = "";
 		$scope.rfg = json.RA.RFG;
 	}
-	if (json.RA.RFBO<=100) 
+	if (json.RA.RFBO<=100)
 	{
 		$scope.rfbclass = "dimmingoverridehighlight";
 		$scope.rfb = json.RA.RFBO;
@@ -1501,7 +1560,7 @@ function CheckRadionOverride($scope)
 		$scope.rfbclass = "";
 		$scope.rfb = json.RA.RFB;
 	}
-	if (json.RA.RFIO<=100) 
+	if (json.RA.RFIO<=100)
 	{
 		$scope.rficlass = "dimmingoverridehighlight";
 		$scope.rfi = json.RA.RFIO;
@@ -1579,7 +1638,7 @@ function CheckRelay($scope)
 				$scope["r"+a+b+"off"]=true;
 				$scope["r"+a+b+"auto"]=false;
 			}
-		}			
+		}
 	}
 }
 
@@ -1590,6 +1649,9 @@ function loaddefaultlabels()
 	jsondefaultlabels.RA.T1N = "Temp 1";
 	jsondefaultlabels.RA.T2N = "Temp 2";
 	jsondefaultlabels.RA.T3N = "Temp 3";
+	jsondefaultlabels.RA.T4N = "Temp 4";
+	jsondefaultlabels.RA.T5N = "Temp 5";
+	jsondefaultlabels.RA.T6N = "Temp 6";
 	jsondefaultlabels.RA.PHN = "pH";
 	jsondefaultlabels.RA.ATOHIGHN = "ATO High";
 	jsondefaultlabels.RA.ATOLOWN = "ATO Low";
@@ -1652,6 +1714,9 @@ function loaddefaultvalues()
 	json.RA.T1 = "0.0";
 	json.RA.T2 = "0.0";
 	json.RA.T3 = "0.0";
+	json.RA.T4 = "0.0";
+	json.RA.T5 = "0.0";
+	json.RA.T6 = "0.0";
 	json.RA.PH = "0.00";
 	json.RA.ATOHIGH = "0";
 	json.RA.ATOLOW = "0";
@@ -1696,7 +1761,7 @@ function loaddefaultvalues()
 	json.RA.IO2 = "0";
 	json.RA.IO3 = "0";
 	json.RA.IO4 = "0";
-	json.RA.IO5 = "0";	
+	json.RA.IO5 = "0";
 }
 
 function loadlabels($scope) {
@@ -1705,6 +1770,9 @@ function loadlabels($scope) {
 		$scope.t1n=ifNull(jsonlabels.RA.T1N, jsondefaultlabels.RA.T1N);
 		$scope.t2n=ifNull(jsonlabels.RA.T2N, jsondefaultlabels.RA.T2N);
 		$scope.t3n=ifNull(jsonlabels.RA.T3N, jsondefaultlabels.RA.T3N);
+		$scope.t4n=ifNull(jsonlabels.RA.T4N, jsondefaultlabels.RA.T4N);
+		$scope.t5n=ifNull(jsonlabels.RA.T5N, jsondefaultlabels.RA.T5N);
+		$scope.t6n=ifNull(jsonlabels.RA.T6N, jsondefaultlabels.RA.T6N);
 		$scope.phn=ifNull(jsonlabels.RA.PHN, jsondefaultlabels.RA.PHN);
 		$scope.saln=ifNull(jsonlabels.RA.SALN, jsondefaultlabels.RA.SALN);
 		$scope.orpn=ifNull(jsonlabels.RA.ORPN, jsondefaultlabels.RA.ORPN);
@@ -1775,7 +1843,7 @@ function setjson(id, value) {
 		if (Object.keys(json.RA)[item] == id)
 		{
 			json.RA[Object.keys(json.RA)[item]]=value;
-			return;	
+			return;
 		}
 	}
 }
@@ -1788,6 +1856,14 @@ function changeactivecontroller($scope, $localStorage, $rootScope, id)
 	json=$localStorage.jsonarray[id];
 	$localStorage.json=json;
 	jsonlabels=$localStorage.jsonlabelsarray[id];
+	parametersscope.extratempenabled=false;
+	parametersscope.salinityenabled=false;
+	parametersscope.orpenabled=false;
+	parametersscope.pheenabled=false;
+	parametersscope.wlenabled=false;
+	parametersscope.multiwlenabled=false;
+	parametersscope.humenabled=false;
+	parametersscope.parenabled=false;
 	if (jsonlabels==null) loaddefaultlabels();
 	cloudusername=$localStorage.controllers[$localStorage.activecontrollerid].cloudusername;
 	cloudpassword=$localStorage.controllers[$localStorage.activecontrollerid].cloudpassword;
@@ -1867,6 +1943,24 @@ function CreateChart($scope, container)
 				ydec = 1
 				yunit = '°'
 			}
+			else if (name == "T4") {
+				pcolor = '#9900CC'
+				tname = $scope.t4n
+				ydec = 1
+				yunit = '°'
+			}
+			else if (name == "T5") {
+				pcolor = '#9900CC'
+				tname = $scope.t5n
+				ydec = 1
+				yunit = '°'
+			}
+			else if (name == "T6") {
+				pcolor = '#9900CC'
+				tname = $scope.t6n
+				ydec = 1
+				yunit = '°'
+			}
 			else if (name == "WL") {
 				pcolor = '#0033FF'
 				tname = $scope.wln
@@ -1934,7 +2028,7 @@ function CreateChart($scope, container)
 			// we keep a counter and create the chart when all the data is loaded.
 			seriesCounter++;
 
-			if(data.length==0) 
+			if(data.length==0)
 			{
 				modal.hide();
 				ons.notification.alert({message: 'No data to display' });
@@ -2042,7 +2136,7 @@ function DrawChart(container) {
 	});
 	modal.hide();
 
-}	
+}
 
 function getbytevalue(d,i)
 {
@@ -2066,14 +2160,19 @@ function SaveMQTTMemory(cmd)
 	{
 		message = new Paho.MQTT.Message(cmd.replace("mb","mb:").replace(",",":"));
 		updatestring="MBOK:";
-	}			
+	}
+	if (cmd.substring(0,2)=='mi')
+	{
+		message = new Paho.MQTT.Message(cmd.replace("mi","mi:").replace(",",":"));
+		updatestring="MIOK:";
+	}
 	if (message!=null)
 	{
 		modal.show();
 		ourtimer=currenttimeout(function() {
 			modal.hide();
 			ons.notification.alert({message: 'Timeout. Please try again.', title: 'Reef Angel Controller' });
-		}, 8000);			
+		}, 8000);
 		message.destinationName = cloudusername + "/in";
 		mqtt.send(message);
 	}
@@ -2086,7 +2185,7 @@ function MQTTconnect($scope) {
 		json.RA.cloudstatus="Connecting...";
 	console.log("Connecting...");
 	mqtt = new Paho.MQTT.Client(
-					"forum.reefangel.com",
+					"104.36.18.211",
 					9001,
 					"web_" + parseInt(Math.random() * 100,
 					10));
@@ -2148,10 +2247,9 @@ function onConnectionLost(response) {
 };
 
 function onMessageArrived(message) {
-
 	var topic = message.destinationName;
 	var payload = message.payloadString;
-	console.log(message.payloadString);
+	//console.log(message.payloadString);
 	json.RA.lastrefresh=new Date().toLocaleString();
 	json.RA.ID=cloudusername;
 	parametersscope.lastupdated=json.RA.lastrefresh;
@@ -2159,9 +2257,10 @@ function onMessageArrived(message) {
 	parametersscope.forumid=json.RA.ID;
 	if (message.payloadString.indexOf("DATE:")!=-1)
 	{
+		var radatetime = new Date(parseInt(message.payloadString.substr(9, 2)) + 2000, message.payloadString.substr(5, 2) - 1, message.payloadString.substr(7, 2), message.payloadString.substr(11, 2), message.payloadString.substr(13, 2));
 		currenttimeout.cancel( ourtimer );
 		modal.hide();
-		ons.notification.alert({message: 'Date/Time synced', title: 'Reef Angel Controller' });
+		ons.notification.alert({message: 'Controller time: ' + radatetime.toLocaleString(), title: 'Reef Angel Controller' });
 	}
 	if (message.payloadString.indexOf("V:")!=-1)
 	{
@@ -2169,8 +2268,11 @@ function onMessageArrived(message) {
 		modal.hide();
 		ons.notification.alert({message: message.payloadString.replace("V:", "Version: "), title: 'Reef Angel Controller' });
 	}
-	if (message.payloadString.indexOf("R1:")!=-1 || message.payloadString.indexOf("R2:")!=-1 || message.payloadString.indexOf("R3:")!=-1 || message.payloadString.indexOf("R4:")!=-1 || message.payloadString.indexOf("R5:")!=-1 || message.payloadString.indexOf("R6:")!=-1 || message.payloadString.indexOf("R7:")!=-1 || message.payloadString.indexOf("R8:")!=-1 || message.payloadString.indexOf("ROFF")!=-1 ||  message.payloadString.indexOf("RON")!=-1)
+	if ((message.payloadString.indexOf("R:")!=-1 && message.payloadString.indexOf("PAR:")==-1) || message.payloadString.indexOf("R1:")!=-1 || message.payloadString.indexOf("R2:")!=-1 || message.payloadString.indexOf("R3:")!=-1 || message.payloadString.indexOf("R4:")!=-1 || message.payloadString.indexOf("R5:")!=-1 || message.payloadString.indexOf("R6:")!=-1 || message.payloadString.indexOf("R7:")!=-1 || message.payloadString.indexOf("R8:")!=-1 || message.payloadString.indexOf("ROFF")!=-1 ||  message.payloadString.indexOf("RON")!=-1)
 	{
+		UpdateCloudParam(message,"R:","r",1,0);
+		UpdateCloudParam(message,"ROFF:","roff",1,0);
+		UpdateCloudParam(message,"RON:","ron",1,0);
 		UpdateCloudParam(message,"R1:","r1",1,0);
 		UpdateCloudParam(message,"ROFF1:","roff1",1,0);
 		UpdateCloudParam(message,"RON1:","ron1",1,0);
@@ -2268,9 +2370,9 @@ function onMessageArrived(message) {
 		UpdateCloudParam(message,"DCM:","dcm",1,0);
 		UpdateCloudParam(message,"DCS:","dcs",1,0);
 		UpdateCloudParam(message,"DCD:","dcd",1,0);
-		parametersscope.dcm = rfmodes[json.RA.DCM];
-		parametersscope.dcmodecolor = rfmodecolors[json.RA.DCM];
-		parametersscope.dcimage = rfimages[json.RA.RFM];
+		parametersscope.dcm = rfmodes[parseInt(json.RA.DCM)];
+		parametersscope.dcmodecolor = rfmodecolors[parseInt(json.RA.DCM)];
+		parametersscope.dcimage = rfimages[parseInt(json.RA.RFM)];
 	}
 	UpdateCloudParam(message,"PWME0:","pwme0",1,0);
 	UpdateCloudParam(message,"PWME1:","pwme1",1,0);
@@ -2300,9 +2402,9 @@ function onMessageArrived(message) {
 		UpdateCloudParam(message,"RFM:","rfm",1,0);
 		UpdateCloudParam(message,"RFS:","rfs",1,0);
 		UpdateCloudParam(message,"RFD:","rfd",1,0);
-		parametersscope.rfm = rfmodes[json.RA.RFM];
-		parametersscope.rfmodecolor = rfmodecolors[json.RA.RFM];
-		parametersscope.rfimage = rfimages[json.RA.RFM];
+		parametersscope.rfm = rfmodes[parseInt(json.RA.RFM)];
+		parametersscope.rfmodecolor = rfmodecolors[parseInt(json.RA.RFM)];
+		parametersscope.rfimage = rfimages[parseInt(json.RA.RFM)];
 	}
 	UpdateCloudParam(message,"RFW:","rfw",1,0);
 	UpdateCloudParam(message,"RFRB:","rfrb",1,0);
@@ -2310,7 +2412,7 @@ function onMessageArrived(message) {
 	UpdateCloudParam(message,"RFG:","rfg",1,0);
 	UpdateCloudParam(message,"RFB:","rfb",1,0);
 	UpdateCloudParam(message,"RFI:","rfi",1,0);
-	if (message.payloadString.indexOf("RFWO:")!=-1 || message.payloadString.indexOf("RFRBO:")!=-1 || message.payloadString.indexOf("RFRO:")!=-1 || message.payloadString.indexOf("RFGO:")!=-1 || message.payloadString.indexOf("RFBO:")!=-1 || message.payloadString.indexOf("RFIO:")!=-1) 
+	if (message.payloadString.indexOf("RFWO:")!=-1 || message.payloadString.indexOf("RFRBO:")!=-1 || message.payloadString.indexOf("RFRO:")!=-1 || message.payloadString.indexOf("RFGO:")!=-1 || message.payloadString.indexOf("RFBO:")!=-1 || message.payloadString.indexOf("RFIO:")!=-1)
 	{
 		UpdateCloudParam(message,"RFWO:","rfwo",1,0);
 		UpdateCloudParam(message,"RFRBO:","rfrbo",1,0);
@@ -2341,6 +2443,14 @@ function onMessageArrived(message) {
 	UpdateCloudParam(message,"T1:","t1",10,1);
 	UpdateCloudParam(message,"T2:","t2",10,1);
 	UpdateCloudParam(message,"T3:","t3",10,1);
+	if (json.RA.T4!== undefined && json.RA.T5!== undefined && json.RA.T6!== undefined)
+	{
+		if (json.RA.T4!=0 || json.RA.T5!=0 || json.RA.T6!=0)
+			parametersscope.extratempenabled=true;
+	}
+	UpdateCloudParam(message,"T4:","t4",10,1);
+	UpdateCloudParam(message,"T5:","t5",10,1);
+	UpdateCloudParam(message,"T6:","t6",10,1);
 	UpdateCloudParam(message,"PH:","ph",100,2);
 	UpdateCloudParam(message,"ORP:","orp",1,0);
 	UpdateCloudParam(message,"SAL:","sal",10,1);
@@ -2356,11 +2466,13 @@ function onMessageArrived(message) {
 	UpdateCloudParam(message,"CEXP7:","cexp7",1,0);
 	if (message.payloadString.indexOf("MR")!=-1)
 	{
-		memoryraw+=message.payloadString.substr(5,message.payloadString.length);
+		memoryraw+=message.payloadString.substr(5,message.payloadString.length-7);
+		memoryraw = memoryraw.split(" ").join("");
 		//console.log(memoryraw);
 	}
 	UpdateCloudParam(message,"MR21:","mr21",1,0);
 	UpdateCloudParam(message,"MBOK:","mbok",1,0);
+	UpdateCloudParam(message,"MIOK:","miok",1,0);
 	currentstorage.json=json;
 	currentstorage.jsonarray[currentstorage.activecontrollerid]=json;
 	parametersscope.$apply();
@@ -2374,7 +2486,8 @@ function UpdateCloudParam(message,id, element, division, decimal)
 		parametersscope[element]=(message.payloadString.replace(id,"")/division).toFixed(decimal);
 		//if (json.RA[id.replace(":","")]==null) json.RA.push(id.replace(":",""),0);
 		json.RA[id.replace(":","")]=message.payloadString.replace(id,"");
-		if (updatestring==id)
+		//if (updatestring!="") console.log("check: " + updatestring + "-" + id);
+		if (updatestring==id || updatestring.indexOf(id)!=-1)
 		{
 			updatestring="";
 			currenttimeout.cancel( ourtimer );
@@ -2388,11 +2501,11 @@ function UpdateCloudParam(message,id, element, division, decimal)
 				tabbar.loadPage('dcpump.html');
 			else if (id=="C0:" || id=="C1:" || id=="C2:" || id=="C3:" || id=="C4:" || id=="C5:" || id=="C6:" || id=="C7:")
 				tabbar.loadPage('customvar.html');
-			else if (id=="RON1:" || id=="RON2:" || id=="RON3:" || id=="RON4:" || id=="RON5:" || id=="RON6:" || id=="RON7:" || id=="RON8:" || id=="ROFF1:" || id=="ROFF2:" || id=="ROFF3:" || id=="ROFF4:" || id=="ROFF5:" || id=="ROFF6:" || id=="ROFF7:" || id=="ROFF8:")
-				console.log();
+			else if (id=="RON:" || id=="RON1:" || id=="RON2:" || id=="RON3:" || id=="RON4:" || id=="RON5:" || id=="RON6:" || id=="RON7:" || id=="RON8:" || id=="ROFF:" || id=="ROFF1:" || id=="ROFF2:" || id=="ROFF3:" || id=="ROFF4:" || id=="ROFF5:" || id=="ROFF6:" || id=="ROFF7:" || id=="ROFF8:")
+				updatestring="";
 			else if (message.payloadString.indexOf("MR21:")!=-1)
 				internalmemoryrootscope.$broadcast('msg', 'memoryrawok');
-			else if (id=="MBOK:")
+			else if (id=="MBOK:" || id=="MIOK:")
 			{
 				internalmemoryscope.memoryresult+=": OK\n";
 				if (memindex<(MemString.length-1))
@@ -2407,6 +2520,7 @@ function UpdateCloudParam(message,id, element, division, decimal)
 			else
 				ons.notification.alert({message: 'Updated', title: 'Reef Angel Controller' });
 		}
+		//updatestring="";
 	}
 }
 
@@ -2420,4 +2534,3 @@ Number.prototype.pad = function(size) {
       while (s.length < (size || 2)) {s = "0" + s;}
       return s;
     }
-	
