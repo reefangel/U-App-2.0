@@ -52,7 +52,7 @@
       <ons-icon icon="ion-plus-round" size="22px"></ons-icon>
       </span></ons-list-item>
     <ons-list-item modifier="chevron" ng-click="getportallabels();" onclick="menu.toggleMenu()">Download Labels from Portal</ons-list-item>
-    <ons-list-item modifier="chevron" ng-click="syncdate();" onclick="menu.toggleMenu()">Sync RA Time with Phone</ons-list-item>
+    <ons-list-item modifier="chevron" ng-click="syncdate();" onclick="menu.toggleMenu()">Sync RA Time with System</ons-list-item>
     <ons-list-item modifier="chevron" ng-click="getcontrollerdata('d');" onclick="menu.toggleMenu()">Get RA Time</ons-list-item>
     <ons-list-item modifier="chevron" ng-click="getcontrollerdata('v');" onclick="menu.toggleMenu()">Get RA Version</ons-list-item>
     <ons-list-item modifier="chevron" ng-click="showforumid();" onclick="menu.toggleMenu()">Get Forum Username</ons-list-item>
@@ -1478,10 +1478,30 @@
             Feeding Mode
           </ons-list-item>
           <ons-list-item class="item-accordion" ng-if="isGroupShown(10)">
-            <p>Please choose the length of time of the feeding mode:</p>
+            <p>Please choose the length of time of the feeding mode.</p>
             <label for="feedingtimer"><strong>Feeding Timer (s):</strong></label>
             <input type="number" ng-model="$parent.$parent.feedingtimer" min="0"max="32000" step="1" class="timetext"/>
           </ons-list-item>
+          <ons-list-item ng-click="toggleGroup(11)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(11)}" ng-if="rfenabled">
+              <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(11)"></ons-icon>
+              <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(11)"></ons-icon>
+              RF Expansion - Radion
+            </ons-list-item>
+            <ons-list-item class="item-accordion" ng-if="isGroupShown(11)">
+              <p>Please choose the start %, end % and duration for each Radion channel. Duration is only applicable for Slope.</p>
+              <div ng-repeat="channel in ['White','Royal Blue','Red','Green','Blue','Intensity']">
+                  <h4>{{channel}}:</h4>
+                  <label><strong>Start %:</strong></label>
+                  <input type="number" ng-model="$parent.$parent.radionslopestart[channel]" min="0"max="100" step="1" class="timetext"/>
+                  <br>
+                  <label><strong>End %:</strong></label>
+                  <input type="number" ng-model="$parent.$parent.radionslopeend[channel]" min="0"max="100" step="1" class="timetext"/>
+                  <br>
+                  <label><strong>Duration (m):</strong></label>
+                  <input type="number" ng-model="$parent.$parent.radionslopeduration[channel]" min="0"max="255" step="1" class="timetext"/>
+                  <br>
+                </div>
+            </ons-list-item>
         </ons-list>
 	    <div class="rflabel, whitespace">{{memoryresult}}</div>
         <div class="controllerlist" ng-if="showim">
