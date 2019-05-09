@@ -93,7 +93,9 @@
 </ons-template>
 <ons-template id="parameters.html">
   <ons-page>
-    <h4 style="text-align: center;"><img style="text-align: center;" src="images/logo.png"></h4>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
+      <b>Parameters</b>
+    </h4>
     <div ng-controller="Parameters">
       <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
       <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
@@ -1478,7 +1480,7 @@
             Feeding Mode
           </ons-list-item>
           <ons-list-item class="item-accordion" ng-if="isGroupShown(10)">
-            <p>Please choose the length of time of the feeding mode.</p>
+            <p>Please choose the length of time of the feeding mode. <i>Note: Requires reboot to take effect.</i></p>
             <label for="feedingtimer"><strong>Feeding Timer (s):</strong></label>
             <input type="number" ng-model="$parent.$parent.feedingtimer" min="0"max="32000" step="1" class="timetext"/>
           </ons-list-item>

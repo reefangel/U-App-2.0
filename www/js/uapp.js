@@ -1128,12 +1128,7 @@ function UpdateParams($scope,$timeout,$localStorage)
 	}
 	if (json!=null && json.RA!=null)
 	{
-		if ((json.RA.SF & 1<<2)==1<<2)
-			$scope.mode="Water Change";
-		else if ((json.RA.SF & 1<<1)==1<<1)
-			$scope.mode="Feeding";
-		else
-			$scope.mode="Nominal";
+		setModeLabel();
 		if (json.RA.lastrefresh == null)
 			$scope.lastupdated="Never";
 		else
@@ -2246,6 +2241,15 @@ function onConnectionLost(response) {
 	}
 };
 
+function setModeLabel() {
+	if ((json.RA.SF & 1<<2)==1<<2)
+		parametersscope.mode="Water Change";
+	else if ((json.RA.SF & 1<<1)==1<<1)
+		parametersscope.mode="Feeding";
+	else
+		parametersscope.mode="Nominal";
+}
+
 function onMessageArrived(message) {
 	var topic = message.destinationName;
 	var payload = message.payloadString;
@@ -2336,6 +2340,7 @@ function onMessageArrived(message) {
 		var oldsf=json.RA.SF;
 		UpdateCloudParam(message,"SF:","sf",1,0);
 		CheckFlags(parametersscope);
+		setModeLabel();
 		if (oldsf!=json.RA.SF)
 		{
 			currenttimeout.cancel( ourtimer );
