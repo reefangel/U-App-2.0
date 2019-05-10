@@ -362,6 +362,7 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 	}
 
 	$scope.refresh=function(){
+		console.log("refresh()");
 		$scope.getcontrollerdata("r99");
 		UpdateParams($scope, $timeout, $localStorage);
 	}
@@ -1109,7 +1110,7 @@ app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $
 function UpdateParams($scope,$timeout,$localStorage)
 {
 	$scope.$storage = $localStorage;
-	console.log("Updating...");
+	console.log("UpdateParams()");
 	if ($localStorage.controllers.length>0)
 	{
 		//MQTTdisconnect();
@@ -2175,10 +2176,11 @@ function SaveMQTTMemory(cmd)
 
 function MQTTconnect($scope) {
 	if (!(mqtt==null && cloudusername!=null && cloudpassword!=null)) return false;
-	$scope.cloudstatus="Connecting...";
+	parametersscope.cloudstatus="Connecting...";
+	relayscope.cloudstatus="Connecting...";
 	if (json!=null && json.RA!=null)
 		json.RA.cloudstatus="Connecting...";
-	console.log("Connecting...");
+	console.log("MQTTconnect()");
 	mqtt = new Paho.MQTT.Client(
 					"104.36.18.211",
 					9001,
