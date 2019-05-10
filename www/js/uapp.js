@@ -2243,11 +2243,20 @@ function onConnectionLost(response) {
 
 function setModeLabel() {
 	if ((json.RA.SF & 1<<2)==1<<2)
-		parametersscope.mode="Water Change";
+	{
+		parametersscope.currentMode="Water Change";
+		relayscope.currentMode="Water Change";
+	}
 	else if ((json.RA.SF & 1<<1)==1<<1)
-		parametersscope.mode="Feeding";
+	{
+		parametersscope.currentMode="Feeding";
+		relayscope.currentMode="Feeding";
+	}
 	else
-		parametersscope.mode="Nominal";
+	{
+		parametersscope.currentMode="Nominal";
+		relayscope.currentMode="Nominal";
+	}
 }
 
 function onMessageArrived(message) {
