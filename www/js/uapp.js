@@ -109,7 +109,7 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 			return;
 		}
 		// Check if we should try to connect to cloud
-		if (cmd == "r99" && MQTTconnect($scope)) return;
+		if (cmd == "r99" && MQTTconnect()) return;
 		// This is a non-cloud request
 		getcontrollerdatahttp(cmd);
 	}
@@ -1125,7 +1125,7 @@ function UpdateParams($scope,$timeout,$localStorage)
 			$scope.cloudenabled=true;
 			$scope.cloudstatus=json.RA.cloudstatus;
 		}
-		MQTTconnect($scope);
+		MQTTconnect();
 	}
 	if (json!=null && json.RA!=null)
 	{
@@ -1866,7 +1866,7 @@ function changeactivecontroller($scope, $localStorage, $rootScope, id)
 	MQTTdisconnect();
 	$rootScope.$broadcast('msg', 'paramsok');
 	$rootScope.$broadcast('msg', 'popoverclose');
-	MQTTconnect($scope);
+	MQTTconnect();
 }
 
 // create the chart when all data is loaded
@@ -2174,7 +2174,7 @@ function SaveMQTTMemory(cmd)
 	}
 }
 
-function MQTTconnect($scope) {
+function MQTTconnect() {
 	if (!(mqtt==null && cloudusername!=null && cloudpassword!=null)) return false;
 	parametersscope.cloudstatus="Connecting...";
 	relayscope.cloudstatus="Connecting...";
@@ -2192,15 +2192,8 @@ function MQTTconnect($scope) {
 		cleanSession: true,
 		onSuccess: onConnect,
 		onFailure: function (message) {
-			console.log(message.errorMessage);
-			if (parametersscope.cloudenabled)
-			{
-				parametersscope.cloudstatus="Disconnected";
-				relayscope.cloudstatus="Disconnected";
-				if (json!=null && json.RA!=null)
-					json.RA.cloudstatus="Disconnected";
-			}
-			mqtt=null;
+			console.log("Connection Failure: " + message.errorMessage);
+			setConnectionLost();
 		}
 	};
 
@@ -2223,7 +2216,7 @@ function onConnect() {
 	parametersscope.cloudstatus="Connected";
 	relayscope.cloudstatus="Connected";
 	if (json!=null && json.RA!=null)
-			json.RA.cloudstatus="Connected";
+		json.RA.cloudstatus="Connected";
 	parametersscope.$apply();
 	mqtt.subscribe(cloudusername + "/out");
 	message = new Paho.MQTT.Message("all:0");
@@ -2232,16 +2225,21 @@ function onConnect() {
 }
 
 function onConnectionLost(response) {
-	console.log("Connection Lost");
+	console.log("Connection Lost: " + response.errorMessage);
+	setConnectionLost();
+	MQTTconnect();
+};
+
+function setConnectionLost() {
 	if (parametersscope.cloudenabled)
 	{
 		parametersscope.cloudstatus="Disconnected";
 		relayscope.cloudstatus="Disconnected";
-		mqtt=null;
 		if (json!=null && json.RA!=null)
 			json.RA.cloudstatus="Disconnected";
 	}
-};
+	mqtt=null;
+}
 
 function setModeLabel() {
 	if ((json.RA.SF & 1<<2)==1<<2)
