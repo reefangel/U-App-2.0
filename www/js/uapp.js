@@ -2384,7 +2384,6 @@ function UpdateCloudParam(message, division, decimal)
 	var payload = message.payloadString;
 	var id = payload.substring(0, payload.indexOf(":") + 1);
 	var element = id.slice(0, -1).toLowerCase();
-	console.log(updatestring + " | " + payload + " | " + id + " | " + element);
 	parametersscope[element]=(payload.replace(id,"")/division).toFixed(decimal);
 	json.RA[id.replace(":","")]=payload.replace(id,"");
 	if (updatestring==id || updatestring.indexOf(id)!=-1)
