@@ -2404,6 +2404,7 @@ function UpdateCloudParam(message, division, decimal)
 		else if (id=="MBOK:" || id=="MIOK:")
 		{
 			internalmemoryscope.memoryresult+=": OK\n";
+			internalmemoryscope.$apply();
 			if (memindex<(MemString.length-1))
 			{
 				modal.show();
