@@ -1761,66 +1761,65 @@ function loaddefaultvalues()
 }
 
 function loadlabels($scope) {
-	if (jsonlabels!=null)
+	if (jsonlabels==null) jsonlabels=new Object();
+	if (jsonlabels.RA==null) jsonlabels.RA=new Object();
+	$scope.t1n=ifNull(jsonlabels.RA.T1N, jsondefaultlabels.RA.T1N);
+	$scope.t2n=ifNull(jsonlabels.RA.T2N, jsondefaultlabels.RA.T2N);
+	$scope.t3n=ifNull(jsonlabels.RA.T3N, jsondefaultlabels.RA.T3N);
+	$scope.t4n=ifNull(jsonlabels.RA.T4N, jsondefaultlabels.RA.T4N);
+	$scope.t5n=ifNull(jsonlabels.RA.T5N, jsondefaultlabels.RA.T5N);
+	$scope.t6n=ifNull(jsonlabels.RA.T6N, jsondefaultlabels.RA.T6N);
+	$scope.phn=ifNull(jsonlabels.RA.PHN, jsondefaultlabels.RA.PHN);
+	$scope.saln=ifNull(jsonlabels.RA.SALN, jsondefaultlabels.RA.SALN);
+	$scope.orpn=ifNull(jsonlabels.RA.ORPN, jsondefaultlabels.RA.ORPN);
+	$scope.phen=ifNull(jsonlabels.RA.PHEN, jsondefaultlabels.RA.PHEN);
+	$scope.humn=ifNull(jsonlabels.RA.HUMN, jsondefaultlabels.RA.HUMN);
+	$scope.parn=ifNull(jsonlabels.RA.PARN, jsondefaultlabels.RA.PARN);
+	$scope.wln=ifNull(jsonlabels.RA.WLN, jsondefaultlabels.RA.WLN);
+	$scope.wl1n=ifNull(jsonlabels.RA.WL1N, jsondefaultlabels.RA.WL1N);
+	$scope.wl2n=ifNull(jsonlabels.RA.WL2N, jsondefaultlabels.RA.WL2N);
+	$scope.wl3n=ifNull(jsonlabels.RA.WL3N, jsondefaultlabels.RA.WL3N);
+	$scope.wl4n=ifNull(jsonlabels.RA.WL4N, jsondefaultlabels.RA.WL4N);
+	$scope.atohighn=ifNull(jsonlabels.RA.ATOHIGHN, jsondefaultlabels.RA.ATOHIGHN);
+	$scope.atolown=ifNull(jsonlabels.RA.ATOLOWN, jsondefaultlabels.RA.ATOLOWN);
+	$scope.pwmd1n=ifNull(jsonlabels.RA.PWMD1N, jsondefaultlabels.RA.PWMD1N);
+	$scope.pwma1n=ifNull(jsonlabels.RA.PWMA1N, jsondefaultlabels.RA.PWMA1N);
+	$scope.alarmn=ifNull(jsonlabels.RA.ALARMN, jsondefaultlabels.RA.ALARMN);
+	$scope.leakn=ifNull(jsonlabels.RA.LEAKN, jsondefaultlabels.RA.LEAKN);
+	$scope.pwmd2n=ifNull(jsonlabels.RA.PWMD2N, jsondefaultlabels.RA.PWMD2N);
+	$scope.pwma2n=ifNull(jsonlabels.RA.PWMA2N, jsondefaultlabels.RA.PWMA2N);
+	$scope.pwme0n=ifNull(jsonlabels.RA.PWME0N, jsondefaultlabels.RA.PWME0N);
+	$scope.pwme1n=ifNull(jsonlabels.RA.PWME1N, jsondefaultlabels.RA.PWME1N);
+	$scope.pwme2n=ifNull(jsonlabels.RA.PWME2N, jsondefaultlabels.RA.PWME2N);
+	$scope.pwme3n=ifNull(jsonlabels.RA.PWME3N, jsondefaultlabels.RA.PWME3N);
+	$scope.pwme4n=ifNull(jsonlabels.RA.PWME4N, jsondefaultlabels.RA.PWME4N);
+	$scope.pwme5n=ifNull(jsonlabels.RA.PWME5N, jsondefaultlabels.RA.PWME5N);
+	$scope.c0n=ifNull(jsonlabels.RA.C0N, jsondefaultlabels.RA.C0N);
+	$scope.c1n=ifNull(jsonlabels.RA.C1N, jsondefaultlabels.RA.C1N);
+	$scope.c2n=ifNull(jsonlabels.RA.C2N, jsondefaultlabels.RA.C2N);
+	$scope.c3n=ifNull(jsonlabels.RA.C3N, jsondefaultlabels.RA.C3N);
+	$scope.c4n=ifNull(jsonlabels.RA.C4N, jsondefaultlabels.RA.C4N);
+	$scope.c5n=ifNull(jsonlabels.RA.C5N, jsondefaultlabels.RA.C5N);
+	$scope.c6n=ifNull(jsonlabels.RA.C6N, jsondefaultlabels.RA.C6N);
+	$scope.c7n=ifNull(jsonlabels.RA.C7N, jsondefaultlabels.RA.C7N);
+	$scope.rfwn=ifNull(jsonlabels.RA.RFWN, jsondefaultlabels.RA.RFWN);
+	$scope.rfrbn=ifNull(jsonlabels.RA.RFRBN, jsondefaultlabels.RA.RFRBN);
+	$scope.rfrn=ifNull(jsonlabels.RA.RFRN, jsondefaultlabels.RA.RFRN);
+	$scope.rfgn=ifNull(jsonlabels.RA.RFGN, jsondefaultlabels.RA.RFGN);
+	$scope.rfbn=ifNull(jsonlabels.RA.RFBN, jsondefaultlabels.RA.RFBN);
+	$scope.rfin=ifNull(jsonlabels.RA.RFIN, jsondefaultlabels.RA.RFIN);
+	$scope.io0n=ifNull(jsonlabels.RA.IO0N, jsondefaultlabels.RA.IO0N);
+	$scope.io1n=ifNull(jsonlabels.RA.IO1N, jsondefaultlabels.RA.IO1N);
+	$scope.io2n=ifNull(jsonlabels.RA.IO2N, jsondefaultlabels.RA.IO2N);
+	$scope.io3n=ifNull(jsonlabels.RA.IO3N, jsondefaultlabels.RA.IO3N);
+	$scope.io4n=ifNull(jsonlabels.RA.IO4N, jsondefaultlabels.RA.IO4N);
+	$scope.io5n=ifNull(jsonlabels.RA.IO5N, jsondefaultlabels.RA.IO5N);
+	for (a=1; a<=8; a++)
 	{
-		$scope.t1n=ifNull(jsonlabels.RA.T1N, jsondefaultlabels.RA.T1N);
-		$scope.t2n=ifNull(jsonlabels.RA.T2N, jsondefaultlabels.RA.T2N);
-		$scope.t3n=ifNull(jsonlabels.RA.T3N, jsondefaultlabels.RA.T3N);
-		$scope.t4n=ifNull(jsonlabels.RA.T4N, jsondefaultlabels.RA.T4N);
-		$scope.t5n=ifNull(jsonlabels.RA.T5N, jsondefaultlabels.RA.T5N);
-		$scope.t6n=ifNull(jsonlabels.RA.T6N, jsondefaultlabels.RA.T6N);
-		$scope.phn=ifNull(jsonlabels.RA.PHN, jsondefaultlabels.RA.PHN);
-		$scope.saln=ifNull(jsonlabels.RA.SALN, jsondefaultlabels.RA.SALN);
-		$scope.orpn=ifNull(jsonlabels.RA.ORPN, jsondefaultlabels.RA.ORPN);
-		$scope.phen=ifNull(jsonlabels.RA.PHEN, jsondefaultlabels.RA.PHEN);
-		$scope.humn=ifNull(jsonlabels.RA.HUMN, jsondefaultlabels.RA.HUMN);
-		$scope.parn=ifNull(jsonlabels.RA.PARN, jsondefaultlabels.RA.PARN);
-		$scope.wln=ifNull(jsonlabels.RA.WLN, jsondefaultlabels.RA.WLN);
-		$scope.wl1n=ifNull(jsonlabels.RA.WL1N, jsondefaultlabels.RA.WL1N);
-		$scope.wl2n=ifNull(jsonlabels.RA.WL2N, jsondefaultlabels.RA.WL2N);
-		$scope.wl3n=ifNull(jsonlabels.RA.WL3N, jsondefaultlabels.RA.WL3N);
-		$scope.wl4n=ifNull(jsonlabels.RA.WL4N, jsondefaultlabels.RA.WL4N);
-		$scope.atohighn=ifNull(jsonlabels.RA.ATOHIGHN, jsondefaultlabels.RA.ATOHIGHN);
-		$scope.atolown=ifNull(jsonlabels.RA.ATOLOWN, jsondefaultlabels.RA.ATOLOWN);
-		$scope.pwmd1n=ifNull(jsonlabels.RA.PWMD1N, jsondefaultlabels.RA.PWMD1N);
-		$scope.pwma1n=ifNull(jsonlabels.RA.PWMA1N, jsondefaultlabels.RA.PWMA1N);
-		$scope.alarmn=ifNull(jsonlabels.RA.ALARMN, jsondefaultlabels.RA.ALARMN);
-		$scope.leakn=ifNull(jsonlabels.RA.LEAKN, jsondefaultlabels.RA.LEAKN);
-		$scope.pwmd2n=ifNull(jsonlabels.RA.PWMD2N, jsondefaultlabels.RA.PWMD2N);
-		$scope.pwma2n=ifNull(jsonlabels.RA.PWMA2N, jsondefaultlabels.RA.PWMA2N);
-		$scope.pwme0n=ifNull(jsonlabels.RA.PWME0N, jsondefaultlabels.RA.PWME0N);
-		$scope.pwme1n=ifNull(jsonlabels.RA.PWME1N, jsondefaultlabels.RA.PWME1N);
-		$scope.pwme2n=ifNull(jsonlabels.RA.PWME2N, jsondefaultlabels.RA.PWME2N);
-		$scope.pwme3n=ifNull(jsonlabels.RA.PWME3N, jsondefaultlabels.RA.PWME3N);
-		$scope.pwme4n=ifNull(jsonlabels.RA.PWME4N, jsondefaultlabels.RA.PWME4N);
-		$scope.pwme5n=ifNull(jsonlabels.RA.PWME5N, jsondefaultlabels.RA.PWME5N);
-		$scope.c0n=ifNull(jsonlabels.RA.C0N, jsondefaultlabels.RA.C0N);
-		$scope.c1n=ifNull(jsonlabels.RA.C1N, jsondefaultlabels.RA.C1N);
-		$scope.c2n=ifNull(jsonlabels.RA.C2N, jsondefaultlabels.RA.C2N);
-		$scope.c3n=ifNull(jsonlabels.RA.C3N, jsondefaultlabels.RA.C3N);
-		$scope.c4n=ifNull(jsonlabels.RA.C4N, jsondefaultlabels.RA.C4N);
-		$scope.c5n=ifNull(jsonlabels.RA.C5N, jsondefaultlabels.RA.C5N);
-		$scope.c6n=ifNull(jsonlabels.RA.C6N, jsondefaultlabels.RA.C6N);
-		$scope.c7n=ifNull(jsonlabels.RA.C7N, jsondefaultlabels.RA.C7N);
-		$scope.rfwn=ifNull(jsonlabels.RA.RFWN, jsondefaultlabels.RA.RFWN);
-		$scope.rfrbn=ifNull(jsonlabels.RA.RFRBN, jsondefaultlabels.RA.RFRBN);
-		$scope.rfrn=ifNull(jsonlabels.RA.RFRN, jsondefaultlabels.RA.RFRN);
-		$scope.rfgn=ifNull(jsonlabels.RA.RFGN, jsondefaultlabels.RA.RFGN);
-		$scope.rfbn=ifNull(jsonlabels.RA.RFBN, jsondefaultlabels.RA.RFBN);
-		$scope.rfin=ifNull(jsonlabels.RA.RFIN, jsondefaultlabels.RA.RFIN);
-		$scope.io0n=ifNull(jsonlabels.RA.IO0N, jsondefaultlabels.RA.IO0N);
-		$scope.io1n=ifNull(jsonlabels.RA.IO1N, jsondefaultlabels.RA.IO1N);
-		$scope.io2n=ifNull(jsonlabels.RA.IO2N, jsondefaultlabels.RA.IO2N);
-		$scope.io3n=ifNull(jsonlabels.RA.IO3N, jsondefaultlabels.RA.IO3N);
-		$scope.io4n=ifNull(jsonlabels.RA.IO4N, jsondefaultlabels.RA.IO4N);
-		$scope.io5n=ifNull(jsonlabels.RA.IO5N, jsondefaultlabels.RA.IO5N);
-		for (a=1; a<=8; a++)
+		$scope["r"+a+"n"]=ifNull(jsonlabels.RA["R"+a+"N"], jsondefaultlabels.RA["R"+a+"N"]);
+		for (b=1; b<=8; b++)
 		{
-			$scope["r"+a+"n"]=ifNull(jsonlabels.RA["R"+a+"N"], jsondefaultlabels.RA["R"+a+"N"]);
-			for (b=1; b<=8; b++)
-			{
-				$scope["r"+a+b+"n"]=ifNull(jsonlabels.RA["R"+a+b+"N"], jsondefaultlabels.RA["R"+a+b+"N"]);
-			}
+			$scope["r"+a+b+"n"]=ifNull(jsonlabels.RA["R"+a+b+"N"], jsondefaultlabels.RA["R"+a+b+"N"]);
 		}
 	}
 }
