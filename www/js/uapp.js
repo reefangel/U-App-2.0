@@ -353,6 +353,7 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 			modal.show();
 			currenttimeout=$timeout;
 			ourtimer=$timeout(function() {
+				updatestring = "";
 				modal.hide();
 				ons.notification.alert({message: 'Timeout. Please try again.', title: 'Reef Angel Controller'});
 			}, 8000);
@@ -893,7 +894,6 @@ app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $
 				$scope.radionslopestart[channel]=getbytevalue(memoryraw,radionMemory++);
 				$scope.radionslopeend[channel]=getbytevalue(memoryraw,radionMemory++);
 				$scope.radionslopeduration[channel]=getbytevalue(memoryraw,radionMemory++);
-				console.log(channel + $scope.radionslopestart[channel]);
 			}
 		}
 	});
@@ -2259,7 +2259,6 @@ function setModeLabel() {
 }
 
 function onMessageArrived(message) {
-	var topic = message.destinationName;
 	var payload = message.payloadString;
 	//console.log(message.payloadString);
 	json.RA.lastrefresh=new Date().toLocaleString();
@@ -2267,69 +2266,38 @@ function onMessageArrived(message) {
 	parametersscope.lastupdated=json.RA.lastrefresh;
 	relayscope.lastupdated=json.RA.lastrefresh;
 	parametersscope.forumid=json.RA.ID;
-	if (message.payloadString.indexOf("DATE:")!=-1)
+	if (payload.indexOf("DATE:")!=-1)
 	{
-		var radatetime = new Date(parseInt(message.payloadString.substr(9, 2)) + 2000, message.payloadString.substr(5, 2) - 1, message.payloadString.substr(7, 2), message.payloadString.substr(11, 2), message.payloadString.substr(13, 2));
+		var radatetime = new Date(parseInt(payload.substr(9, 2)) + 2000, payload.substr(5, 2) - 1, payload.substr(7, 2), payload.substr(11, 2), payload.substr(13, 2));
 		currenttimeout.cancel( ourtimer );
 		modal.hide();
 		ons.notification.alert({message: 'Controller time: ' + radatetime.toLocaleString(), title: 'Reef Angel Controller' });
 	}
-	if (message.payloadString.indexOf("V:")!=-1)
+	if (payload.indexOf("V:")!=-1)
 	{
 		currenttimeout.cancel( ourtimer );
 		modal.hide();
-		ons.notification.alert({message: message.payloadString.replace("V:", "Version: "), title: 'Reef Angel Controller' });
+		ons.notification.alert({message: payload.replace("V:", "Version: "), title: 'Reef Angel Controller' });
 	}
-	if ((message.payloadString.indexOf("R:")!=-1 && message.payloadString.indexOf("PAR:")==-1) || message.payloadString.indexOf("R1:")!=-1 || message.payloadString.indexOf("R2:")!=-1 || message.payloadString.indexOf("R3:")!=-1 || message.payloadString.indexOf("R4:")!=-1 || message.payloadString.indexOf("R5:")!=-1 || message.payloadString.indexOf("R6:")!=-1 || message.payloadString.indexOf("R7:")!=-1 || message.payloadString.indexOf("R8:")!=-1 || message.payloadString.indexOf("ROFF")!=-1 ||  message.payloadString.indexOf("RON")!=-1)
+
+	if (payload.match(/T\d:.*/g) || payload.indexOf("SAL:") != -1)
+		UpdateCloudParam(message, 10, 1);
+	else if (payload.match(/PHE?:.*/g))
+		UpdateCloudParam(message, 100, 2);
+	else
+		UpdateCloudParam(message, 1, 0);
+
+	if (payload.match(/R(ON|OFF)?\d?:.*/g))
 	{
-		UpdateCloudParam(message,"R:","r",1,0);
-		UpdateCloudParam(message,"ROFF:","roff",1,0);
-		UpdateCloudParam(message,"RON:","ron",1,0);
-		UpdateCloudParam(message,"R1:","r1",1,0);
-		UpdateCloudParam(message,"ROFF1:","roff1",1,0);
-		UpdateCloudParam(message,"RON1:","ron1",1,0);
-		UpdateCloudParam(message,"R2:","r2",1,0);
-		UpdateCloudParam(message,"ROFF2:","roff2",1,0);
-		UpdateCloudParam(message,"RON2:","ron2",1,0);
-		UpdateCloudParam(message,"R3:","r3",1,0);
-		UpdateCloudParam(message,"ROFF3:","roff3",1,0);
-		UpdateCloudParam(message,"RON3:","ron3",1,0);
-		UpdateCloudParam(message,"R4:","r4",1,0);
-		UpdateCloudParam(message,"ROFF4:","roff4",1,0);
-		UpdateCloudParam(message,"RON4:","ron4",1,0);
-		UpdateCloudParam(message,"R5:","r5",1,0);
-		UpdateCloudParam(message,"ROFF5:","roff5",1,0);
-		UpdateCloudParam(message,"RON5:","ron5",1,0);
-		UpdateCloudParam(message,"R6:","r6",1,0);
-		UpdateCloudParam(message,"ROFF6:","roff6",1,0);
-		UpdateCloudParam(message,"RON6:","ron6",1,0);
-		UpdateCloudParam(message,"R7:","r7",1,0);
-		UpdateCloudParam(message,"ROFF7:","roff7",1,0);
-		UpdateCloudParam(message,"RON7:","ron7",1,0);
-		UpdateCloudParam(message,"R8:","r8",1,0);
-		UpdateCloudParam(message,"ROFF8:","roff8",1,0);
-		UpdateCloudParam(message,"RON8:","ron8",1,0);
 		CheckRelay(relayscope);
 	}
-	UpdateCloudParam(message,"ATOLOW:","atolow",1,0);
-	UpdateCloudParam(message,"ATOHIGH:","atohigh",1,0);
-	UpdateCloudParam(message,"ALARM:","alarm",1,0);
-	if (message.payloadString.indexOf("EM:")!=-1 && message.payloadString.indexOf("REM:")==-1)
+	if (payload.match(/EM\d:.*/g))
 	{
-		UpdateCloudParam(message,"EM:","em",1,0);
 		CheckExpansion(parametersscope);
 	}
-	if (message.payloadString.indexOf("EM1:")!=-1)
-	{
-		UpdateCloudParam(message,"EM1:","em1",1,0);
-		CheckExpansion(parametersscope);
-	}
-	UpdateCloudParam(message,"REM:","rem",1,0);
-	UpdateCloudParam(message,"BID:","bid",1,0);
-	if (message.payloadString.indexOf("AF:")!=-1)
+	if (payload.indexOf("AF:")!=-1)
 	{
 		var oldaf=json.RA.AF;
-		UpdateCloudParam(message,"AF:","af",1,0);
 		CheckFlags(parametersscope);
 		if (oldaf!=json.RA.AF)
 		{
@@ -2343,10 +2311,9 @@ function onMessageArrived(message) {
 				ons.notification.alert({message: 'Leak Cleared', title: 'Reef Angel Controller' });
 		}
 	}
-	if (message.payloadString.indexOf("SF:")!=-1)
+	if (payload.indexOf("SF:")!=-1)
 	{
 		var oldsf=json.RA.SF;
-		UpdateCloudParam(message,"SF:","sf",1,0);
 		CheckFlags(parametersscope);
 		setModeLabel();
 		if (oldsf!=json.RA.SF)
@@ -2367,173 +2334,88 @@ function onMessageArrived(message) {
 				ons.notification.alert({message: 'Water Change Mode Ended', title: 'Reef Angel Controller' });
 		}
 	}
-	UpdateCloudParam(message,"PWMD:","pwmd",1,0);
-	UpdateCloudParam(message,"PWMA:","pwma",1,0);
-	UpdateCloudParam(message,"PWMD2:","pwmd2",1,0);
-	UpdateCloudParam(message,"PWMA2:","pwma2",1,0);
-	UpdateCloudParam(message,"WL:","wl",1,0);
-	UpdateCloudParam(message,"WL1:","wl1",1,0);
-	UpdateCloudParam(message,"WL2:","wl2",1,0);
-	UpdateCloudParam(message,"WL3:","wl3",1,0);
-	UpdateCloudParam(message,"WL4:","wl4",1,0);
-	UpdateCloudParam(message,"HUM:","hum",1,1);
-	UpdateCloudParam(message,"DCT:","dct",1,0);
-	if (message.payloadString.indexOf("DCM:")!=-1 || message.payloadString.indexOf("DCS:")!=-1 || message.payloadString.indexOf("DCD:")!=-1)
+	if (payload.match(/DC[MSD]:.*/g))
 	{
-		UpdateCloudParam(message,"DCM:","dcm",1,0);
-		UpdateCloudParam(message,"DCS:","dcs",1,0);
-		UpdateCloudParam(message,"DCD:","dcd",1,0);
 		parametersscope.dcm = rfmodes[parseInt(json.RA.DCM)];
 		parametersscope.dcmodecolor = rfmodecolors[parseInt(json.RA.DCM)];
 		parametersscope.dcimage = rfimages[parseInt(json.RA.RFM)];
 	}
-	UpdateCloudParam(message,"PWME0:","pwme0",1,0);
-	UpdateCloudParam(message,"PWME1:","pwme1",1,0);
-	UpdateCloudParam(message,"PWME2:","pwme2",1,0);
-	UpdateCloudParam(message,"PWME3:","pwme3",1,0);
-	UpdateCloudParam(message,"PWME4:","pwme4",1,0);
-	UpdateCloudParam(message,"PWME5:","pwme5",1,0);
-	if (message.payloadString.indexOf("PWMDO:")!=-1 || message.payloadString.indexOf("PWMAO:")!=-1 || message.payloadString.indexOf("PWMD2O:")!=-1 || message.payloadString.indexOf("PWMA2O:")!=-1 || message.payloadString.indexOf("PWME0O:")!=-1 || message.payloadString.indexOf("PWME1O:")!=-1 || message.payloadString.indexOf("PWME2O:")!=-1 || message.payloadString.indexOf("PWME3O:")!=-1 || message.payloadString.indexOf("PWME4O:")!=-1 || message.payloadString.indexOf("PWME5O:")!=-1)
+	if (payload.match(/PWM.+O:.*/g))
 	{
-		UpdateCloudParam(message,"PWMDO:","pwmdo",1,0);
-		UpdateCloudParam(message,"PWMAO:","pwmao",1,0);
-		UpdateCloudParam(message,"PWMD2O:","pwmd2o",1,0);
-		UpdateCloudParam(message,"PWMA2O:","pwma2o",1,0);
-		UpdateCloudParam(message,"PWME0O:","pwme0o",1,0);
-		UpdateCloudParam(message,"PWME1O:","pwme1o",1,0);
-		UpdateCloudParam(message,"PWME2O:","pwme2o",1,0);
-		UpdateCloudParam(message,"PWME3O:","pwme3o",1,0);
-		UpdateCloudParam(message,"PWME4O:","pwme4o",1,0);
-		UpdateCloudParam(message,"PWME5O:","pwme5o",1,0);
 		CheckDimmingOverride(parametersscope);
 	}
-	UpdateCloudParam(message,"AIW:","aiw",1,0);
-	UpdateCloudParam(message,"AIB:","aib",1,0);
-	UpdateCloudParam(message,"AIRB:","airb",1,0);
-	if (message.payloadString.indexOf("RFM:")!=-1 || message.payloadString.indexOf("RFS:")!=-1 || message.payloadString.indexOf("RFD:")!=-1)
+	if (payload.match(/RF[MSD]:.*/g))
 	{
-		UpdateCloudParam(message,"RFM:","rfm",1,0);
-		UpdateCloudParam(message,"RFS:","rfs",1,0);
-		UpdateCloudParam(message,"RFD:","rfd",1,0);
 		parametersscope.rfm = rfmodes[parseInt(json.RA.RFM)];
 		parametersscope.rfmodecolor = rfmodecolors[parseInt(json.RA.RFM)];
 		parametersscope.rfimage = rfimages[parseInt(json.RA.RFM)];
 	}
-	UpdateCloudParam(message,"RFW:","rfw",1,0);
-	UpdateCloudParam(message,"RFRB:","rfrb",1,0);
-	UpdateCloudParam(message,"RFR:","rfr",1,0);
-	UpdateCloudParam(message,"RFG:","rfg",1,0);
-	UpdateCloudParam(message,"RFB:","rfb",1,0);
-	UpdateCloudParam(message,"RFI:","rfi",1,0);
-	if (message.payloadString.indexOf("RFWO:")!=-1 || message.payloadString.indexOf("RFRBO:")!=-1 || message.payloadString.indexOf("RFRO:")!=-1 || message.payloadString.indexOf("RFGO:")!=-1 || message.payloadString.indexOf("RFBO:")!=-1 || message.payloadString.indexOf("RFIO:")!=-1)
+	if (payload.match(/RF.+O:.*/g))
 	{
-		UpdateCloudParam(message,"RFWO:","rfwo",1,0);
-		UpdateCloudParam(message,"RFRBO:","rfrbo",1,0);
-		UpdateCloudParam(message,"RFRO:","rfro",1,0);
-		UpdateCloudParam(message,"RFGO:","rfgo",1,0);
-		UpdateCloudParam(message,"RFBO:","rfbo",1,0);
-		UpdateCloudParam(message,"RFIO:","rfio",1,0);
 		CheckRadionOverride(parametersscope);
 	}
-	if (message.payloadString.indexOf("IO:")!=-1)
+	if (payload.indexOf("IO:")!=-1)
 	{
-		UpdateCloudParam(message,"IO:","io",1,0);
 		CheckIO(parametersscope);
 	}
-	UpdateCloudParam(message,"LEAK:","leak",1,0);
-	if (message.payloadString.indexOf("C0:")!=-1 || message.payloadString.indexOf("C1:")!=-1 || message.payloadString.indexOf("C2:")!=-1 || message.payloadString.indexOf("C3:")!=-1 || message.payloadString.indexOf("C4:")!=-1 || message.payloadString.indexOf("C5:")!=-1 || message.payloadString.indexOf("C6:")!=-1 || message.payloadString.indexOf("C7:")!=-1)
+	if (payload.match(/C\d:.*/g))
 	{
-		UpdateCloudParam(message,"C0:","c0",1,0);
-		UpdateCloudParam(message,"C1:","c1",1,0);
-		UpdateCloudParam(message,"C2:","c2",1,0);
-		UpdateCloudParam(message,"C3:","c3",1,0);
-		UpdateCloudParam(message,"C4:","c4",1,0);
-		UpdateCloudParam(message,"C5:","c5",1,0);
-		UpdateCloudParam(message,"C6:","c6",1,0);
-		UpdateCloudParam(message,"C7:","c7",1,0);
 		CheckCvar(parametersscope);
 	}
-	UpdateCloudParam(message,"T1:","t1",10,1);
-	UpdateCloudParam(message,"T2:","t2",10,1);
-	UpdateCloudParam(message,"T3:","t3",10,1);
 	if (json.RA.T4!== undefined && json.RA.T5!== undefined && json.RA.T6!== undefined)
 	{
 		if (json.RA.T4!=0 || json.RA.T5!=0 || json.RA.T6!=0)
 			parametersscope.extratempenabled=true;
 	}
-	UpdateCloudParam(message,"T4:","t4",10,1);
-	UpdateCloudParam(message,"T5:","t5",10,1);
-	UpdateCloudParam(message,"T6:","t6",10,1);
-	UpdateCloudParam(message,"PH:","ph",100,2);
-	UpdateCloudParam(message,"ORP:","orp",1,0);
-	UpdateCloudParam(message,"SAL:","sal",10,1);
-	UpdateCloudParam(message,"PHE:","phe",100,2);
-	UpdateCloudParam(message,"PAR:","par",1,0);
-	UpdateCloudParam(message,"CEXP0:","cexp0",1,0);
-	UpdateCloudParam(message,"CEXP1:","cexp1",1,0);
-	UpdateCloudParam(message,"CEXP2:","cexp2",1,0);
-	UpdateCloudParam(message,"CEXP3:","cexp3",1,0);
-	UpdateCloudParam(message,"CEXP4:","cexp4",1,0);
-	UpdateCloudParam(message,"CEXP5:","cexp5",1,0);
-	UpdateCloudParam(message,"CEXP6:","cexp6",1,0);
-	UpdateCloudParam(message,"CEXP7:","cexp7",1,0);
-	if (message.payloadString.indexOf("MR")!=-1)
+	if (payload.indexOf("MR")!=-1)
 	{
-		memoryraw+=message.payloadString.substr(5,message.payloadString.length-7);
+		memoryraw+=payload.substr(5, payload.length-7);
 		memoryraw = memoryraw.split(" ").join("");
 		//console.log(memoryraw);
 	}
-	UpdateCloudParam(message,"MR21:","mr21",1,0);
-	UpdateCloudParam(message,"MBOK:","mbok",1,0);
-	UpdateCloudParam(message,"MIOK:","miok",1,0);
 	currentstorage.json=json;
 	currentstorage.jsonarray[currentstorage.activecontrollerid]=json;
 	parametersscope.$apply();
 	relayscope.$apply();
 };
 
-function UpdateCloudParam(message,id, element, division, decimal)
+function UpdateCloudParam(message, division, decimal)
 {
-	if (message.payloadString.indexOf(id)!=-1)
+	var payload = message.payloadString;
+	var id = payload.substring(0, payload.indexOf(":") + 1);
+	var element = id.slice(0, -1).toLowerCase();
+	console.log(updatestring + " | " + payload + " | " + id + " | " + element);
+	parametersscope[element]=(payload.replace(id,"")/division).toFixed(decimal);
+	json.RA[id.replace(":","")]=payload.replace(id,"");
+	if (updatestring==id || updatestring.indexOf(id)!=-1)
 	{
-		parametersscope[element]=(message.payloadString.replace(id,"")/division).toFixed(decimal);
-		//if (json.RA[id.replace(":","")]==null) json.RA.push(id.replace(":",""),0);
-		json.RA[id.replace(":","")]=message.payloadString.replace(id,"");
-		//if (updatestring!="") console.log("check: " + updatestring + "-" + id);
-		if (updatestring==id || updatestring.indexOf(id)!=-1)
+		updatestring="";
+		currenttimeout.cancel(ourtimer);
+		modal.hide();
+		if (payload.match(/PWM.+O:.*/g))
+			tabbar.loadPage('dimming.html');
+		else if (payload.match(/RF.+O:.*/g) || payload.match(/RF[MSD]:.*/g))
+			tabbar.loadPage('rf.html');
+		else if (payload.match(/DC[MSD]:.*/g))
+			tabbar.loadPage('dcpump.html');
+		else if (payload.match(/C\d:.*/g))
+			tabbar.loadPage('customvar.html');
+		else if (payload.indexOf("MR21:")!=-1)
+			internalmemoryrootscope.$broadcast('msg', 'memoryrawok');
+		else if (id=="MBOK:" || id=="MIOK:")
 		{
-			updatestring="";
-			currenttimeout.cancel( ourtimer );
-			modal.hide();
-			//console.log(id);
-			if (id=="PWMAO:" || id=="PWMDO:" || id=="PWMA2O:" || id=="PWMD2O:" || id=="PWME0O:" || id=="PWME1O:" || id=="PWME2O:" || id=="PWME3O:" || id=="PWME4O:" || id=="PWME5O:")
-				tabbar.loadPage('dimming.html');
-			else if (id=="RFWO:" || id=="RFRBO:" || id=="RFRO:" || id=="RFGO:" || id=="RFBO:" || id=="RFIO:" || id=="RFM:" || id=="RFS:" || id=="RFD:")
-				tabbar.loadPage('rf.html');
-			else if (id=="DCM:" || id=="DCS:" || id=="DCD:")
-				tabbar.loadPage('dcpump.html');
-			else if (id=="C0:" || id=="C1:" || id=="C2:" || id=="C3:" || id=="C4:" || id=="C5:" || id=="C6:" || id=="C7:")
-				tabbar.loadPage('customvar.html');
-			else if (id=="RON:" || id=="RON1:" || id=="RON2:" || id=="RON3:" || id=="RON4:" || id=="RON5:" || id=="RON6:" || id=="RON7:" || id=="RON8:" || id=="ROFF:" || id=="ROFF1:" || id=="ROFF2:" || id=="ROFF3:" || id=="ROFF4:" || id=="ROFF5:" || id=="ROFF6:" || id=="ROFF7:" || id=="ROFF8:")
-				updatestring="";
-			else if (message.payloadString.indexOf("MR21:")!=-1)
-				internalmemoryrootscope.$broadcast('msg', 'memoryrawok');
-			else if (id=="MBOK:" || id=="MIOK:")
+			internalmemoryscope.memoryresult+=": OK\n";
+			if (memindex<(MemString.length-1))
 			{
-				internalmemoryscope.memoryresult+=": OK\n";
-				if (memindex<(MemString.length-1))
-				{
-					modal.show();
-					memindex++;
-					console.log(MemURL[memindex]);
-					internalmemoryscope.memoryresult+=MemString[memindex];
-					SaveMQTTMemory(MemURL[memindex]);
-				}
+				modal.show();
+				memindex++;
+				console.log(MemURL[memindex]);
+				internalmemoryscope.memoryresult+=MemString[memindex];
+				SaveMQTTMemory(MemURL[memindex]);
 			}
-			else
-				ons.notification.alert({message: 'Updated', title: 'Reef Angel Controller' });
 		}
-		//updatestring="";
+		else if (!payload.match(/R(ON|OFF)?\d?:.*/g))
+			ons.notification.alert({message: 'Updated', title: 'Reef Angel Controller' });
 	}
 }
 
