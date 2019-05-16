@@ -1148,8 +1148,6 @@ function UpdateParams($scope,$timeout,$localStorage)
 		if (json.RA.BID == 4)
 		{
 			$scope.stardimmingenabled=true;
-			$scope.pwmd2 = json.RA.PWMD2;
-			$scope.pwma2 = json.RA.PWMA2;
 			$scope.alarm = json.RA.ALARM;
 			$scope.leak = json.RA.LEAK;
 		}
@@ -1178,15 +1176,6 @@ function UpdateParams($scope,$timeout,$localStorage)
 				$scope.exp8enabled=true;
 		}
 		CheckExpansion($scope);
-		if ((json.RA.EM & 1) == 1)
-		{
-			$scope.pwme0 = json.RA.PWME0;
-			$scope.pwme1 = json.RA.PWME1;
-			$scope.pwme2 = json.RA.PWME2;
-			$scope.pwme3 = json.RA.PWME3;
-			$scope.pwme4 = json.RA.PWME4;
-			$scope.pwme5 = json.RA.PWME5;
-		}
 		if ((json.RA.EM & 2) == 2)
 		{
 			$scope.rfm = rfmodes[parseInt(json.RA.RFM)];
@@ -1194,12 +1183,6 @@ function UpdateParams($scope,$timeout,$localStorage)
 			$scope.rfd = json.RA.RFD;
 			$scope.rfmodecolor = rfmodecolors[parseInt(json.RA.RFM)];
 			$scope.rfimage = rfimages[parseInt(json.RA.RFM)];
-			$scope.rfw = json.RA.RFW;
-			$scope.rfrb = json.RA.RFRB;
-			$scope.rfr = json.RA.RFR;
-			$scope.rfg = json.RA.RFG;
-			$scope.rfb = json.RA.RFB;
-			$scope.rfi = json.RA.RFI;
 			CheckRadionOverride($scope);
 		}
 		if ((json.RA.EM & 8) == 8)
@@ -1235,10 +1218,6 @@ function UpdateParams($scope,$timeout,$localStorage)
 		CheckFlags($scope);
 		$scope.atohigh = json.RA.ATOHIGH;
 		$scope.atolow = json.RA.ATOLOW;
-		if (json.RA.PWMD!=null)
-			$scope.pwmd = json.RA.PWMD;
-		if (json.RA.PWMA!=null)
-			$scope.pwma = json.RA.PWMA;
 		CheckDimmingOverride($scope);
 		CheckCvar($scope);
 		$scope.c0 = json.RA.C0;
@@ -1405,102 +1384,106 @@ function CheckDimmingOverride($scope)
 	if (json.RA.PWMDO<=100)
 	{
 		$scope.pwmdclass = "dimmingoverridehighlight";
-		$scope.pwmd = json.RA.PWMDO;
+		$scope.pwmd = parseInt(json.RA.PWMDO, 10);
 	}
 	else
 	{
 		$scope.pwmdclass = "";
-		$scope.pwmd = json.RA.PWMD;
+		$scope.pwmd = parseInt(json.RA.PWMD, 10);
 	}
 	if (json.RA.PWMAO<=100)
 	{
 		$scope.pwmaclass = "dimmingoverridehighlight";
-		$scope.pwma = json.RA.PWMAO;
+		$scope.pwma = parseInt(json.RA.PWMAO, 10);
 	}
 	else
 	{
 		$scope.pwmaclass = "";
-		$scope.pwma = json.RA.PWMA;
+		$scope.pwma = parseInt(json.RA.PWMA, 10);
 	}
-	if (json.RA.PWMD2O<=100)
+	if (json.RA.BID == 4)
 	{
-		$scope.pwmd2class = "dimmingoverridehighlight";
-		$scope.pwmd2 = json.RA.PWMD2O;
+		if (json.RA.PWMD2O<=100)
+		{
+			$scope.pwmd2class = "dimmingoverridehighlight";
+			$scope.pwmd2 = parseInt(json.RA.PWMD2O, 10);
+		}
+		else
+		{
+			$scope.pwmd2class = "";
+			$scope.pwmd2 = parseInt(json.RA.PWMD2, 10);
+		}
+		if (json.RA.PWMA2O<=100)
+		{
+			$scope.pwma2class = "dimmingoverridehighlight";
+			$scope.pwma2 = parseInt(json.RA.PWMA2O, 10);
+		}
+		else
+		{
+			$scope.pwma2class = "";
+			$scope.pwma2 = parseInt(json.RA.PWMA2, 10);
+		}
 	}
-	else
-	{
-		$scope.pwmd2class = "";
-		$scope.pwmd2 = json.RA.PWMD2;
-	}
-	if (json.RA.PWMA2O<=100)
-	{
-		$scope.pwma2class = "dimmingoverridehighlight";
-		$scope.pwma2 = json.RA.PWMA2O;
-	}
-	else
-	{
-		$scope.pwma2class = "";
-		$scope.pwma2 = json.RA.PWMA2;
-	}
+	if ((json.RA.EM & 1) != 1) return;
 	if (json.RA.PWME0O<=100)
 	{
 		$scope.pwme0class = "dimmingoverridehighlight";
-		$scope.pwme0 = json.RA.PWME0O;
+		$scope.pwme0 = parseInt(json.RA.PWME0O, 10);
 	}
 	else
 	{
 		$scope.pwme0class = "";
-		$scope.pwme0 = json.RA.PWME0;
+		$scope.pwme0 = parseInt(json.RA.PWME0, 10);
 	}
 	if (json.RA.PWME1O<=100)
 	{
 		$scope.pwme1class = "dimmingoverridehighlight";
-		$scope.pwme1 = json.RA.PWME1O;
+		$scope.pwme1 = parseInt(json.RA.PWME1O, 10);
 	}
 	else
 	{
 		$scope.pwme1class = "";
-		$scope.pwme1 = json.RA.PWME1;
+		$scope.pwme1 = parseInt(json.RA.PWME1, 10);
 	}
 	if (json.RA.PWME2O<=100)
 	{
 		$scope.pwme2class = "dimmingoverridehighlight";
-		$scope.pwme2 = json.RA.PWME2O;
+		$scope.pwme2 = parseInt(json.RA.PWME2O, 10);
 	}
 	else
 	{
 		$scope.pwme2class = "";
-		$scope.pwme2 = json.RA.PWME2;
+		$scope.pwme2 = parseInt(json.RA.PWME2, 10);
 	}
 	if (json.RA.PWME3O<=100)
 	{
 		$scope.pwme3class = "dimmingoverridehighlight";
-		$scope.pwme3 = json.RA.PWME3O;
+		$scope.pwme3 = parseInt(json.RA.PWME3O, 10);
 	}
 	else
 	{
 		$scope.pwme3class = "";
-		$scope.pwme3 = json.RA.PWME3;
+		$scope.pwme3 = parseInt(json.RA.PWME3, 10);
 	}
 	if (json.RA.PWME4O<=100)
 	{
 		$scope.pwme4class = "dimmingoverridehighlight";
-		$scope.pwme4 = json.RA.PWME4O;
+		$scope.pwme4 = parseInt(json.RA.PWME4O, 10);
 	}
 	else
 	{
 		$scope.pwme4class = "";
-		$scope.pwme4 = json.RA.PWME4;
+		$scope.pwme4 = parseInt(json.RA.PWME4, 10);
 	}
 	if (json.RA.PWME5O<=100)
 	{
 		$scope.pwme5class = "dimmingoverridehighlight";
-		$scope.pwme5 = json.RA.PWME5O;
+		$scope.pwme5 = parseInt(json.RA.PWME5O, 10);
 	}
 	else
 	{
 		$scope.pwme5class = "";
-		$scope.pwme5 = json.RA.PWME5;
+		$scope.pwme5 = parseInt(json.RA.PWME5, 10);
 	}
 }
 
@@ -1509,62 +1492,62 @@ function CheckRadionOverride($scope)
 	if (json.RA.RFWO<=100)
 	{
 		$scope.rfwclass = "dimmingoverridehighlight";
-		$scope.rfw = json.RA.RFWO;
+		$scope.rfw = parseInt(json.RA.RFWO, 10);
 	}
 	else
 	{
 		$scope.rfwclass = "";
-		$scope.rfw = json.RA.RFW;
+		$scope.rfw = parseInt(json.RA.RFW, 10);
 	}
 	if (json.RA.RFRBO<=100)
 	{
 		$scope.rfrbclass = "dimmingoverridehighlight";
-		$scope.rfrb = json.RA.RFRBO;
+		$scope.rfrb = parseInt(json.RA.RFRBO, 10);
 	}
 	else
 	{
 		$scope.rfrbclass = "";
-		$scope.rfrb = json.RA.RFRB;
+		$scope.rfrb = parseInt(json.RA.RFRB, 10);
 	}
 	if (json.RA.RFRO<=100)
 	{
 		$scope.rfrclass = "dimmingoverridehighlight";
-		$scope.rfr = json.RA.RFRO;
+		$scope.rfr = parseInt(json.RA.RFRO, 10);
 	}
 	else
 	{
 		$scope.rfrclass = "";
-		$scope.rfr = json.RA.RFR;
+		$scope.rfr = parseInt(json.RA.RFR, 10);
 	}
 	if (json.RA.RFGO<=100)
 	{
 		$scope.rfgclass = "dimmingoverridehighlight";
-		$scope.rfg = json.RA.RFGO;
+		$scope.rfg = parseInt(json.RA.RFGO, 10);
 	}
 	else
 	{
 		$scope.rfgclass = "";
-		$scope.rfg = json.RA.RFG;
+		$scope.rfg = parseInt(json.RA.RFG, 10);
 	}
 	if (json.RA.RFBO<=100)
 	{
 		$scope.rfbclass = "dimmingoverridehighlight";
-		$scope.rfb = json.RA.RFBO;
+		$scope.rfb = parseInt(json.RA.RFBO, 10);
 	}
 	else
 	{
 		$scope.rfbclass = "";
-		$scope.rfb = json.RA.RFB;
+		$scope.rfb = parseInt(json.RA.RFB, 10);
 	}
 	if (json.RA.RFIO<=100)
 	{
 		$scope.rficlass = "dimmingoverridehighlight";
-		$scope.rfi = json.RA.RFIO;
+		$scope.rfi = parseInt(json.RA.RFIO, 10);
 	}
 	else
 	{
 		$scope.rficlass = "";
-		$scope.rfi = json.RA.RFI;
+		$scope.rfi = parseInt(json.RA.RFI, 10);
 	}
 }
 
@@ -1862,6 +1845,7 @@ function changeactivecontroller($scope, $localStorage, $rootScope, id)
 	if (jsonlabels==null) loaddefaultlabels();
 	cloudusername=$localStorage.controllers[$localStorage.activecontrollerid].cloudusername;
 	cloudpassword=$localStorage.controllers[$localStorage.activecontrollerid].cloudpassword;
+	console.log("changeactivecontroller(): id=" + id + ", cloudusername=" + cloudusername + ", cloudpassword=" + cloudpassword);
 	MQTTdisconnect();
 	$rootScope.$broadcast('msg', 'paramsok');
 	$rootScope.$broadcast('msg', 'popoverclose');
@@ -2179,7 +2163,7 @@ function MQTTconnect() {
 	relayscope.cloudstatus="Connecting...";
 	if (json!=null && json.RA!=null)
 		json.RA.cloudstatus="Connecting...";
-	console.log("MQTTconnect()");
+	console.log("MQTTconnect(): cloudusername=" + cloudusername + ", cloudpassword=", + cloudpassword);
 	mqtt = new Paho.MQTT.Client(
 					"104.36.18.211",
 					9001,
@@ -2191,7 +2175,7 @@ function MQTTconnect() {
 		cleanSession: true,
 		onSuccess: onConnect,
 		onFailure: function (message) {
-			console.log("Connection Failure: " + message.errorMessage);
+			console.log("Connection Failure: code=" + message.errorCode + ", message=" + message.errorMessage);
 			setConnectionLost();
 		}
 	};
@@ -2206,7 +2190,7 @@ function MQTTconnect() {
 }
 
 function MQTTdisconnect() {
-	console.log("Disconnected");
+	console.log("MQTTdisconnect()");
 	if (mqtt!=null)	mqtt.disconnect();
 	mqtt=null;
 }
@@ -2217,6 +2201,7 @@ function onConnect() {
 	if (json!=null && json.RA!=null)
 		json.RA.cloudstatus="Connected";
 	parametersscope.$apply();
+	relayscope.$apply();
 	mqtt.subscribe(cloudusername + "/out");
 	message = new Paho.MQTT.Message("all:0");
 	message.destinationName = cloudusername + "/in";
@@ -2224,9 +2209,10 @@ function onConnect() {
 }
 
 function onConnectionLost(response) {
-	console.log("Connection Lost: " + response.errorMessage);
+	console.log("Connection Lost: code=" + response.errorCode + ", message=" + response.errorMessage);
 	setConnectionLost();
-	MQTTconnect();
+	// If connection times out, try to reconnect
+	if (response.errorCode == 7) MQTTconnect();
 };
 
 function setConnectionLost() {
@@ -2234,6 +2220,8 @@ function setConnectionLost() {
 	{
 		parametersscope.cloudstatus="Disconnected";
 		relayscope.cloudstatus="Disconnected";
+		parametersscope.$apply();
+		relayscope.$apply();
 		if (json!=null && json.RA!=null)
 			json.RA.cloudstatus="Disconnected";
 	}
@@ -2384,6 +2372,7 @@ function UpdateCloudParam(message, division, decimal)
 	var payload = message.payloadString;
 	var id = payload.substring(0, payload.indexOf(":") + 1);
 	var element = id.slice(0, -1).toLowerCase();
+	//console.log("UpdateCloudParam(): updatestring=" + updatestring + ", payload=" + payload + ", id=" + id + ", element=" + element);
 	parametersscope[element]=(payload.replace(id,"")/division).toFixed(decimal);
 	json.RA[id.replace(":","")]=payload.replace(id,"");
 	if (updatestring==id || updatestring.indexOf(id)!=-1)
