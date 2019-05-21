@@ -373,7 +373,7 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 			modal.show();
 			var request=$http({
 				method:"GET",
-				url:"http://forum.reefangel.com/status/labels.aspx?id=" + json.RA.ID,
+				url:"https://forum.reefangel.com/status/labels.aspx?id=" + json.RA.ID,
 				timeout: 3000
 			});
 			request.success(function(data){
@@ -1874,7 +1874,7 @@ function CreateChart($scope, container)
 	seriesID = 0;
 
 	$.each(names, function (i, name) {
-		$.getJSON('http://forum.reefangel.com/status/jsonp.aspx?id=' + json.RA.ID + '&filter=' + name.toLowerCase() + '&callback=?', function (data) {
+		$.getJSON('https://forum.reefangel.com/status/jsonp.aspx?id=' + json.RA.ID + '&filter=' + name.toLowerCase() + '&callback=?', function (data) {
 			var pcolor;
 			var tname;
 			var ydec;
@@ -2164,13 +2164,13 @@ function MQTTconnect() {
 		json.RA.cloudstatus="Connecting...";
 	console.log("MQTTconnect(): cloudusername=" + cloudusername + ", cloudpassword=", + cloudpassword);
 	mqtt = new Paho.MQTT.Client(
-					"104.36.18.211",
-					9001,
+					"cloud.reefangel.com",
+					9002,
 					"web_" + parseInt(Math.random() * 100,
 					10));
 	var options = {
 		timeout: 3,
-		useSSL: false,
+		useSSL: true,
 		cleanSession: true,
 		onSuccess: onConnect,
 		onFailure: function (message) {
