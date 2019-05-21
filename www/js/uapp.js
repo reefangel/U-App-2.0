@@ -101,7 +101,7 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 
 	$scope.getcontrollerdata=function(cmd) {
 		if ($localStorage.controllers.length==0 && !localserver) return;
-		//console.log(cmd);
+		console.log("getcontrollerdata(): " + cmd);
 		// This is a cloud request
 		if (mqtt!=null)
 		{
@@ -228,7 +228,6 @@ app.controller('DropdownController', function($rootScope, $scope, $http, $localS
 
 	getcontrollerdatacloud=function(cmd) {
 		message=null;
-		console.log(cmd);
 		switch (cmd) {
 			case "mf":
 				if ((json.RA.SF & 1<<2)==1<<2)
@@ -2268,6 +2267,9 @@ function onMessageArrived(message) {
 		ons.notification.alert({message: payload.replace("V:", "Version: "), title: 'Reef Angel Controller' });
 	}
 
+	var oldsf=json.RA.SF;
+	var oldaf=json.RA.AF;
+
 	if (payload.match(/T\d:.*/g) || payload.indexOf("SAL:") != -1)
 		UpdateCloudParam(message, 10, 1);
 	else if (payload.match(/PHE?:.*/g))
@@ -2285,7 +2287,6 @@ function onMessageArrived(message) {
 	}
 	if (payload.indexOf("AF:")!=-1)
 	{
-		var oldaf=json.RA.AF;
 		CheckFlags(parametersscope);
 		if (oldaf!=json.RA.AF)
 		{
@@ -2301,7 +2302,6 @@ function onMessageArrived(message) {
 	}
 	if (payload.indexOf("SF:")!=-1)
 	{
-		var oldsf=json.RA.SF;
 		CheckFlags(parametersscope);
 		setModeLabel();
 		if (oldsf!=json.RA.SF)
